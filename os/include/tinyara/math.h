@@ -443,6 +443,32 @@ double exp2(double x);
  */
 long double exp2l(long double x);
 #endif
+#ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @internal
+ */
+double __cos(double x, double y);
+/**
+ * @internal
+ */
+double __sin(double x, double y, int iy);
+/**
+ * @ingroup MATH_LIBC
+ * @brief (logarithm of the) gamma function
+ * @details @b #include <tinyara/math.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
+ */
+double gamma(double x);
+/**
+ * @ingroup MATH_LIBC
+ * @brief log gamma function
+ * @details @b #include <tinyara/math.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
+ */
+double lgamma(double x);
+#endif
 /**
  * @cond
  * @internal

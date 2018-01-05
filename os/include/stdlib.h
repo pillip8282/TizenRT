@@ -68,6 +68,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
+
 #include <sys/types.h>
 #include <stdint.h>
 
@@ -346,7 +347,31 @@ unsigned long long strtoull(const char *, char **, int);
  * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
  * @since Tizen RT v1.0
  */
-double_t strtod(const char *, char **);
+#ifdef CONFIG_HAVE_DOUBLE
+/**
+ * @ingroup STDLIB_LIBC
+ * @brief convert ASCII string to floating-point number
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+double strtod(FAR const char *str, FAR char **endptr);
+#endif
+#ifdef CONFIG_HAVE_LONG_DOUBLE
+/**
+ * @ingroup STDLIB_LIBC
+ * @brief convert ASCII string to floating-point number
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+long double strtold(FAR const char *str, FAR char **endptr);
+#endif
+/**
+ * @ingroup STDLIB_LIBC
+ * @brief convert ASCII string to floating-point number
+ * @brief  POSIX APIs (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+float strtof(FAR const char *str, FAR char **endptr);
 
 /**
  * @ingroup STDLIB_LIBC
@@ -396,6 +421,27 @@ double_t strtod(const char *, char **);
  * @since Tizen RT v1.0
  */
 char *itoa(int value, char *str, int base);
+
+/* Wide character operations */
+
+#ifdef CONFIG_LIBC_WCHAR
+/**
+ * @ingroup STDLIB_LIBC
+ * @brief convert a multibyte sequence to a wide character
+ * @details @b #include <stdlib.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int mbtowc(FAR wchar_t *pwc, FAR const char *s, size_t n);
+/**
+ * @ingroup STDLIB_LIBC
+ * @brief convert a wide character to a multibyte sequence
+ * @details @b #include <stdlib.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.0
+ */
+int wctomb(FAR char *s, wchar_t wchar);
+#endif
 
 /* Memory Management */
 /**

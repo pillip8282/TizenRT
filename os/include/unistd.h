@@ -407,7 +407,17 @@ int execv(FAR const char *path, FAR char *const argv[]);
  * @} */
 #endif
 
-/* Other */
+/* Byte operations */
+/**
+ * @ingroup UNISTD_KERNEL
+ * @brief swap adjacent bytes
+ * @details @b #include <unistd.h> \n
+ * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
+ * @since Tizen RT v1.1
+ */
+void swab(FAR const void *src, FAR void *dest, ssize_t nbytes);
+
+/* getopt and friends */
 /**
  * @ingroup UNISTD_KERNEL
  * @brief command option parsing
@@ -437,7 +447,7 @@ int *getoptoptp(void);			/* unrecognized option character */
 }
 #endif
 
-#endif							/* __INCLUDE_UNISTD_H */
+#endif					/* __INCLUDE_UNISTD_H */
 /**
  * @}
  */
