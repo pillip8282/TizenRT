@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 //***************************************************************************
-// include/cxx/cunistd
+// lib/libxx__gnu_unwind_find_exidx.hxx
 //
-//   Copyright (C) 2012, 2017 Gregory Nutt. All rights reserved.
+//   Copyright (C) 2015 Gregory Nutt. All rights reserved.
 //   Author: Gregory Nutt <gnutt@nuttx.org>
 //
 // Redistribution and use in source and binary forms, with or without
@@ -50,99 +50,48 @@
 //
 //***************************************************************************
 
-#ifndef __INCLUDE_CXX_CUNISTD
-#define __INCLUDE_CXX_CUNISTD
+#ifndef __LIBXX_LIBXX__GNU_UNWIND_FIND_EXIDX_HXX
+#define __LIBXX_LIBXX__GNU_UNWIND_FIND_EXIDX_HXX
 
+extern "C"
+{
 //***************************************************************************
 // Included Files
 //***************************************************************************
 
-#include <unistd.h>
+#include <elf32.h>
+#include <unwind.h>
 
 //***************************************************************************
-// Namespace
+// Pre-processor Definitions
 //***************************************************************************
 
-namespace std
+//***************************************************************************
+// Public Types
+//***************************************************************************/
+
+typedef struct __EIT_entry
 {
-  // Task control interfaces
+  _uw fnoffset;
+  _uw content;
+} __EIT_entry;
 
-  using ::vfork;
-  using ::getpid;
-  using ::_exit;
-  using ::sleep;
-  using ::usleep;
-  using ::pause;
+//***************************************************************************
+// Public Data
+//***************************************************************************
 
-  // File descriptor opertions
-`
-  using ::close;
-  using ::dup;
-  using ::dup2;
-  using ::fsync;
-  using ::lseek;
-  using ::read;
-  using ::write;
-  using ::pread;
-  using ::pwrite;
+extern __EIT_entry __exidx_start;
+extern __EIT_entry __exidx_end;
 
-  // Terminal I/O
+__EIT_entry *__exidx_start_elf;
+__EIT_entry *__exidx_end_elf;
 
-  using ::isatty;
+//***************************************************************************
+// Public Function Prototypes
+//***************************************************************************
 
-  // Memory management
+ _Unwind_Ptr __gnu_Unwind_Find_exidx(_Unwind_Ptr return_address, int *nrecp);
 
-#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_MM_PGALLOC) && \
-    defined(CONFIG_ARCH_USE_MMU)
-  using sbrk;
-#endif
+} // extern "C"
 
-  // Special devices
-
-  using ::pipe;
-
-  // Operations on working directories
-
-  using ::chdir;
-  using ::getcwd;
-
-  // Operations on file paths
-
-  using ::access;
-  using ::unlink;
-  using ::rmdir;
-#ifdef CONFIG_PSEUDOFS_SOFTLINKS
-  using ::link;
-  using ::readlink;
-#endif
-
-  // Execution of program files
-
-#ifdef CONFIG_LIBC_EXECFUNCS
-  using ::execl;
-  using ::execv;
-#endif
-
-  // Byte operations
-
-  using ::swab;
-
-  // getopt and friends
-
-  using ::getopt;
-
-  // Non-standard accessor functions
-
-  using ::getoptargp;
-  using ::getoptindp;
-  using ::getoptoptp;
-
-  // Networking
-
-#ifdef CONFIG_NET
-  using ::gethostname;
-  using ::sethostname;
-#endif
-}
-
-#endif // __INCLUDE_CXX_CUNISTD
+#endif // __LIBXX__GNU_UNWIND_FIND_EXIDX_HXX

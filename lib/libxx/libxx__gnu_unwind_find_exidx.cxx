@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 //***************************************************************************
-// include/cxx/cunistd
+// libxx/libxx__gnu_unwind_find_exidx.cxx
 //
-//   Copyright (C) 2012, 2017 Gregory Nutt. All rights reserved.
+//   Copyright (C) 2015 Gregory Nutt. All rights reserved.
 //   Author: Gregory Nutt <gnutt@nuttx.org>
 //
 // Redistribution and use in source and binary forms, with or without
@@ -50,99 +50,74 @@
 //
 //***************************************************************************
 
-#ifndef __INCLUDE_CXX_CUNISTD
-#define __INCLUDE_CXX_CUNISTD
-
 //***************************************************************************
 // Included Files
 //***************************************************************************
 
-#include <unistd.h>
+#include "libxx__gnu_unwind_find_exidx.hxx"
 
 //***************************************************************************
-// Namespace
+// Pre-processor Definitions
 //***************************************************************************
 
-namespace std
+//***************************************************************************
+// Private Data
+//***************************************************************************
+
+//***************************************************************************
+// Operators
+//***************************************************************************
+
+//***************************************************************************
+// Name:  __gnu_Unwind_Find_exidx
+//
+// Description:
+//    This function is called (if exists) by the gcc generated unwind
+//    run-time in order to retrieve an alternative .ARM.exidx Exception
+//    index section.
+//    This is the case for an ELF module loaded by the elf binary loader.
+//    It is needed to support exception handling for loadable ELF modules.
+//
+//    NOTES:
+//
+//     1. The section to be searched is chosen by the address of the calling
+//        site: if we are in a runtime loaded ELF, the code will be executed
+//        in ram ( > 0x20000000 ) otherwise we will  be executing code  from
+//        flash (0x08000000) (running nuttx from ram will break this logic)
+//
+//     2. __exidx_start  and  __exidx_end refers to main nuttx elf image and
+//        are defined in its linker script.
+//
+//     2. __exidx_start_elf  and  __exidx_end_elf refers  to the elf module
+//        loaded by the elf binary loader, and are initialized at run-time.
+//
+//     3. TODO: if nuttx itself is running from ram, this logic will not work
+//
+//     4. TODO: in order to support multiple elf modules running at the same
+//        time, this error logic needs to be extended to store multiple
+//        start/end ranges that refers to the loaded binaries.
+//
+//***************************************************************************
+
+extern "C"
 {
-  // Task control interfaces
+  void init_unwind_exidx(Elf32_Addr start, Elf32_Word size)
+  {
+    __exidx_start_elf = (__EIT_entry *) start;
+    __exidx_end_elf   = __exidx_start_elf + size;
+  }
 
-  using ::vfork;
-  using ::getpid;
-  using ::_exit;
-  using ::sleep;
-  using ::usleep;
-  using ::pause;
-
-  // File descriptor opertions
-`
-  using ::close;
-  using ::dup;
-  using ::dup2;
-  using ::fsync;
-  using ::lseek;
-  using ::read;
-  using ::write;
-  using ::pread;
-  using ::pwrite;
-
-  // Terminal I/O
-
-  using ::isatty;
-
-  // Memory management
-
-#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_MM_PGALLOC) && \
-    defined(CONFIG_ARCH_USE_MMU)
-  using sbrk;
-#endif
-
-  // Special devices
-
-  using ::pipe;
-
-  // Operations on working directories
-
-  using ::chdir;
-  using ::getcwd;
-
-  // Operations on file paths
-
-  using ::access;
-  using ::unlink;
-  using ::rmdir;
-#ifdef CONFIG_PSEUDOFS_SOFTLINKS
-  using ::link;
-  using ::readlink;
-#endif
-
-  // Execution of program files
-
-#ifdef CONFIG_LIBC_EXECFUNCS
-  using ::execl;
-  using ::execv;
-#endif
-
-  // Byte operations
-
-  using ::swab;
-
-  // getopt and friends
-
-  using ::getopt;
-
-  // Non-standard accessor functions
-
-  using ::getoptargp;
-  using ::getoptindp;
-  using ::getoptoptp;
-
-  // Networking
-
-#ifdef CONFIG_NET
-  using ::gethostname;
-  using ::sethostname;
-#endif
+  _Unwind_Ptr __gnu_Unwind_Find_exidx (_Unwind_Ptr return_address, int *nrecp)
+  {
+    if (return_address < 0x20000000)
+      {
+        *nrecp = &__exidx_end - &__exidx_start;
+        return (_Unwind_Ptr) &__exidx_start;
+      }
+    else
+      {
+        *nrecp = (__exidx_end_elf - __exidx_start_elf) / sizeof(__EIT_entry);
+        return (_Unwind_Ptr) __exidx_start_elf;
+      }
+  }
 }
-
-#endif // __INCLUDE_CXX_CUNISTD
