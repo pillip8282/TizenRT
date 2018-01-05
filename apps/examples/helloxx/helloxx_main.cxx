@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 //***************************************************************************
 // examples/helloxx/helloxx_main.cxx
 //
-//   Copyright (C) 2009, 2011-2013 Gregory Nutt. All rights reserved.
+//   Copyright (C) 2009, 2011-2013, 2017 Gregory Nutt. All rights reserved.
 //   Author: Gregory Nutt <gnutt@nuttx.org>
 //
 // Redistribution and use in source and binary forms, with or without
@@ -56,11 +56,14 @@
 
 #include <tinyara/config.h>
 
-#include <cxx/cstdio>
+#include <cstdio>
+#include <vector>
+#include <iostream>
 #include <debug.h>
 
 #include <tinyara/init.h>
-#include <tinyara/arch.h>
+
+#include <apps/platform/cxxinitialize.h>
 
 //***************************************************************************
 // Definitions
@@ -102,35 +105,35 @@
 
 class CHelloWorld
 {
-  public:
-    CHelloWorld(void) : mSecret(42)
-    {
-      cxxdbg("Constructor: mSecret=%d\n", mSecret);
-    }
+public:
+	CHelloWorld(void) : mSecret(42)
+	{
+		cxxdbg("Constructor: mSecret=%d\n", mSecret);
+	}
 
-    ~CHelloWorld(void)
-    {
-      cxxdbg("Destructor\n");
-    }
+	~CHelloWorld(void)
+	{
+		cxxdbg("Destructor\n");
+	}
 
-    bool HelloWorld(void)
-    {
-      cxxdbg("HelloWorld: mSecret=%d\n", mSecret);
+	bool HelloWorld(void)
+	{
+		cxxdbg("HelloWorld: mSecret=%d\n", mSecret);
 
-      if (mSecret != 42)
-      {
-        printf("CHelloWorld::HelloWorld: CONSTRUCTION FAILED!\n");
-        return false;
-      }
-      else
-      {
-        printf("CHelloWorld::HelloWorld: Hello, World!!\n");
-        return true;
-      }
-    }
+		if (mSecret != 42)
+		{
+			printf("CHelloWorld::HelloWorld: CONSTRUCTION FAILED!\n");
+			return false;
+		}
+		else
+		{
+			printf("CHelloWorld::HelloWorld: Hello, World!!\n");
+			return true;
+		}
+	}
 
-  private:
-    int mSecret;
+private:
+	int mSecret;
 };
 
 //***************************************************************************
@@ -154,38 +157,38 @@ static CHelloWorld g_HelloWorld;
 
 extern "C"
 {
-  int helloxx_main(int argc, char *argv[])
-  {
-    // If C++ initialization for static constructors is supported, then do
-    // that first
+	int helloxx_main(int argc, char *argv[])
+	{
+		// If C++ initialization for static constructors is supported, then do
+		// that first
 
 #ifdef CONFIG_EXAMPLES_HELLOXX_CXXINITIALIZE
-    up_cxxinitialize();
+		up_cxxinitialize();
 #endif
 
-    // Exercise an explictly instantiated C++ object
+		// Exercise an explictly instantiated C++ object
 
-    CHelloWorld *pHelloWorld = new CHelloWorld;
-    printf("helloxx_main: Saying hello from the dynamically constructed instance\n");
-    pHelloWorld->HelloWorld();
+		CHelloWorld *pHelloWorld = new CHelloWorld;
+		printf("helloxx_main: Saying hello from the dynamically constructed instance\n");
+		pHelloWorld->HelloWorld();
 
-    // Exercise an C++ object instantiated on the stack
+		// Exercise an C++ object instantiated on the stack
 
 #ifndef CONFIG_EXAMPLES_HELLOXX_NOSTACKCONST
-    CHelloWorld HelloWorld;
+		CHelloWorld HelloWorld;
 
-    printf("helloxx_main: Saying hello from the instance constructed on the stack\n");
-    HelloWorld.HelloWorld();
+		printf("helloxx_main: Saying hello from the instance constructed on the stack\n");
+		HelloWorld.HelloWorld();
 #endif
 
-    // Exercise an statically constructed C++ object
+		// Exercise an statically constructed C++ object
 
 #ifdef CONFIG_HAVE_CXXINITIALIZE
-    printf("helloxx_main: Saying hello from the statically constructed instance\n");
-    g_HelloWorld.HelloWorld();
+		printf("helloxx_main: Saying hello from the statically constructed instance\n");
+		g_HelloWorld.HelloWorld();
 #endif
 
-    delete pHelloWorld;
-    return 0;
-  }
+		delete pHelloWorld;
+		return 0;
+	}
 }
