@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #endif
 #include "wifi_utils.h"
+#include "wifi_profile.h"
 
 #define NUM_OF_STATE_HANDLER 10 // the number of states
 enum _wifimgr_state {
@@ -973,4 +974,23 @@ wifi_manager_result_e wifi_manager_scan_ap(void)
 	_wifimgr_msg_s msg = {EVT_SCAN, NULL};
 	wifi_manager_result_e res = _handle_request(&msg);
 	return res;
+}
+
+
+wifi_manager_result_e wifi_manager_save_config(wifi_manager_ap_config_s *config)
+{
+	wifi_utils_result_e res = wifi_profile_write(config);
+	if (res != WIFI_UTILS_SUCCESS) {
+		return WIFI_MANAGER_FAIL;
+	}
+	return WIFI_MANAGER_SUCCESS;
+}
+
+wifi_manager_result_e wifi_manager_get_config(wifi_manager_ap_config_s *config)
+{
+	wifi_utils_result_e res = wifi_profile_read(config);
+	if (res != WIFI_UTILS_SUCCESS) {
+		return WIFI_MANAGER_FAIL;
+	}
+	return WIFI_MANAGER_SUCCESS;
 }
