@@ -1,0 +1,37 @@
+###########################################################################
+#
+# Copyright 2018 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+# scons -C '/home/kang/Workspace/TIZENRT/SA_NEW/third_party'
+# valgrind --tool=memcheck --show-reachable=yes --leak-check=full --log-file=memcheck.txt -v --error-limit=no ./sa_sample 
+import os
+
+test_file = ['test_main.c']
+test_file.append('te_test.c')
+test_file.append('teq_test.c')
+tinyevt_src = ['tiny_evtmgr.c']
+tinyevt_src.append('tiny_evtqueue.c')
+
+src_files = test_file + tinyevt_src
+
+env = Environment(ENV = os.environ)
+
+env.Append(CFLAGS=['-g'])
+env.Append(CFLAGS=['-DLINUX'])
+libraries = ['pthread']
+
+env.Program('sa_sample', src_files, LIBS=libraries)
+
