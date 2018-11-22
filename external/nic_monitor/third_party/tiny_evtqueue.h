@@ -41,8 +41,8 @@ tq_result tq_deinit_queue(tem_msg_queue queue);
  * if it returns 0 and item is 0 and if flags is set to TQ_DONTWAIT then no data available
  * return 0 and item is 0 and
  */
-tq_result tq_pop_queue(tem_msg_queue queue, teq_node **item, int flags);
-tq_result tq_push_queue(tem_msg_queue queue, teq_node *item, uint16_t delay); // seconds
+tq_result tq_pop_queue(tem_msg_queue queue, void **data, int flags);
+tq_result tq_push_queue(tem_msg_queue queue, void *data, uint16_t delay); // seconds
 teq_node* tq_create_node(void *arg);
 
 #endif // _TINY_EVT_QUEUE_H__

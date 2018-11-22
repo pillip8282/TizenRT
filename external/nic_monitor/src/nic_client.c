@@ -29,7 +29,7 @@
 #include <netinet/in.h>
 
 #include <tiny_evtmgr.h>
-#include <nic_server.h>
+#include <nic_monitor.h>
 #include <nic_client_list.h>
 #include <nic_util.h>
 
@@ -38,11 +38,6 @@ typedef enum {
 	NC_RECEIVE_MSG,
 	NC_DEINIT,
 } nc_msg_type_e;
-
-struct nc_context {
-	nic_event_handler handler;
-	void *data;
-};
 
 typedef struct _nc_msg_s {
 	nc_msg_type_e evt_type;
@@ -53,9 +48,7 @@ static tem_hnd g_nc_hnd = NULL;
 static int g_signal[2]; // send signal to terminate wait handler.
 static int g_channel_id; // channel to NIC server
 
-static pthread_mutex_t g_nc_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_api_lock = PTHREAD_MUTEX_INITIALIZER;
-
 
 #define NC_LOCK(lock)							\
 	do {										\
@@ -73,6 +66,10 @@ static pthread_mutex_t g_api_lock = PTHREAD_MUTEX_INITIALIZER;
 //////////////////////////////////
 // Message Handler Function
 //////////////////////////////////
+static int32_t _nc_handle_msg(char *buf, int nbytes)
+{
+	_nc_list_msg(buf, nbytes);
+}
 
 static inline nc_msg_s * _nc_create_msg(nc_msg_type_e type, void *data)
 {
@@ -179,15 +176,16 @@ static void *_nc_deinit_channel(void *data)
 
 static void *_nc_receive_message(void *data)
 {
+	NIC_ENTRY;
+
 	fd_set rfds;
 	struct sockaddr_in cliaddr;
 	socklen_t addrlen = 0;
 
-	uint8_t buf[NC_BUF_SIZE];
+	char buf[NC_BUF_SIZE];
 	int sock = g_channel_id;
 	int term = g_signal[0];
 
-	NIC_ENTRY;
 	FD_ZERO(&rfds);
 	FD_SET(sock, &rfds);
 	FD_SET(term, &rfds);
@@ -217,7 +215,7 @@ static void *_nc_receive_message(void *data)
 			if (len != 3) {
 				NIC_ERR;
 			}
-			if (strcmp(buf, "end") == 0){
+			if (strncmp(buf, "end", 3) == 0){
 				printf("terminate wait thread\n");
 				return 0;
 			}
@@ -225,7 +223,6 @@ static void *_nc_receive_message(void *data)
 	} else {
 		assert(0);
 	}
-
 AGAIN:
 	res = _nc_send_msg(NC_RECEIVE_MSG, 0);
 	if (res < 0) {
@@ -258,7 +255,6 @@ static void *_nc_process(tem_msg *msg)
 		NIC_ERR;
 		return 0;
 	}
-
 	switch (nmsg->evt_type) {
 	case NC_INIT:
 		_nc_init_channel(0);
@@ -408,7 +404,6 @@ nic_result_s nic_client_unregister(nc_handle hnd)
 			NC_UNLOCK(g_api_lock);
 			return NIC_FAIL;
 		}
-
 		tem_result res = tiny_evtmgr_stop(g_nc_hnd);
 		if (res != TINY_EVTMGR_SUCCESS) {
 			NIC_ERR;

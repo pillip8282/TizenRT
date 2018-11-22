@@ -110,23 +110,23 @@ _run_process(void *arg)
 	struct tem_context *ctx = (struct tem_context *)arg;
 
 	while (1) {
-		teq_node *node;
-		tq_result res = tq_pop_queue(ctx->queue, &node, 0);
+		struct tem_node_msg* nmsg = NULL;
+		tq_result res = tq_pop_queue(ctx->queue, (void **)&nmsg, 0);
 
 		if (res != TQ_SUCCESS) {
 			TINYEVT_LOG("receive stop message\n");
 			break;
 		}
 
-		if (!node->data) {
+		if (!nmsg) {
 			TINYEVT_ASSERT;
 		}
 
-		struct tem_node_msg* nmsg = (struct tem_node_msg *)node->data;
 		if (!nmsg->msg || !nmsg->hnd) {
 			TINYEVT_ASSERT;
 		}
 		ctx->func(nmsg->msg);
+		free(nmsg);
 	}
 	TINYEVT_OUT;
 
@@ -260,14 +260,7 @@ tem_result tiny_evtmgr_add_msg(tem_hnd hnd, tem_msg *msg, uint32_t delay)
 	nmsg->msg = msg;
 	nmsg->hnd = hnd;
 
-	teq_node *node = tq_create_node((void *)nmsg);
-	if (!node) {
-		free(nmsg);
-		TINYEVT_RETURN(TINY_EVTMGR_FAIL);
-	}
-	node->data = nmsg;
-
-	int ret = tq_push_queue(ctx->queue, node, delay);
+	int ret = tq_push_queue(ctx->queue, (void *)nmsg, delay);
 	if (ret < 0) {
 		TINYEVT_RETURN(TINY_EVTMGR_FAIL);
 	}

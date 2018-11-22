@@ -19,7 +19,23 @@
 #ifndef _NIC_CLIENT_LIST_H__
 #define _NIC_CLIENT_LIST_H__
 
-#include <nic_server.h>
+#include <stdint.h>
+#include <nic_monitor.h>
+
+struct nc_context {
+	nic_event_handler handler;
+	void *data;
+};
+
+struct nc_wrapper {
+	struct nc_context item;
+	struct nc_wrapper *next;
+};
+
+struct nc_list {
+	struct nc_wrapper *head;
+	int cnt;
+};
 
 void _nc_list_init(void);
 struct nc_context* _nc_list_add(nic_event_handler evt, void *data);

@@ -23,7 +23,7 @@
 import os
 
 test_file = ['main.c']
-lib_files = ['./src/nic_client.c', './src/nic_server.c', './src/nic_client_list.c']
+lib_files = ['./src/nic_client.c', './src/nic_server.c', './src/nic_client_list.c', './src/nic_message.c']
 tinyevt_src = ['./third_party/tiny_evtmgr.c', './third_party/tiny_evtqueue.c']
 
 src_files = test_file + lib_files + tinyevt_src
@@ -31,9 +31,9 @@ src_files = test_file + lib_files + tinyevt_src
 env = Environment(ENV = os.environ)
 
 env.Append(CFLAGS=['-g'])
-env.Append(CFLAGS=['-I./inc', '-I./third_party'])
+env.Append(CFLAGS=['-I./inc', '-I./third_party', '-I./src'])
 env.Append(CFLAGS=['-DLINUX'])
-libraries = ['curl', 'pthread']
+libraries = ['pthread']
 #lib_path = ['/usr/lib/x86_64-linux-gnu/']
 
 #env.Program('sa_sample', src_files, LIBS=libraries, LIBPATH=lib_path)

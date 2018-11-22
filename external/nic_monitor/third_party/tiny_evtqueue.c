@@ -169,6 +169,7 @@ void _tq_rem_queue(struct tiny_evtq *eq, struct tiny_qlist *it)
 	}
 
 	it->prev = it->next = NULL;
+	free(it->item);
 	free(it);
 }
 
@@ -297,9 +298,11 @@ tq_result tq_deinit_queue(tem_msg_queue queue)
 	TQ_RETURN(0);
 }
 
-tq_result tq_pop_queue(tem_msg_queue queue, teq_node **item, int flags)
+//tq_result tq_pop_queue(tem_msg_queue queue, teq_node **item, int flags)
+tq_result tq_pop_queue(tem_msg_queue queue, void **data, int flags)
 {
 	TQ_ENTRY;
+	teq_node *item;
 	struct tiny_evtq *eq = queue;
 	struct tiny_qlist *it = NULL;
 
@@ -314,7 +317,8 @@ tq_result tq_pop_queue(tem_msg_queue queue, teq_node **item, int flags)
 		}
 		if (eq->front->time.tv_sec == 0) {
 			it = eq->front;
-			*item = it->item;
+			item = it->item;
+			*data = item->data;
 			_tq_rem_queue(eq, it);
 			TQ_UNLOCK(eq);
 			TQ_RETURN(0);
@@ -344,7 +348,8 @@ tq_result tq_pop_queue(tem_msg_queue queue, teq_node **item, int flags)
 
 			if (it->time.tv_sec == 0 && it->time.tv_usec == 0) {
 				// non-delayed message
-				*item = it->item;
+				item = it->item;
+				*data = item->data;
 				_tq_rem_queue(eq, it);
 				TQ_SET_STATE(eq, TQ_STATE_RUN);
 				TQ_UNLOCK(eq);
@@ -354,7 +359,8 @@ tq_result tq_pop_queue(tem_msg_queue queue, teq_node **item, int flags)
 			gettimeofday(&cur_time, 0);
 			int chk = _tq_calc_time(&wait_time, &cur_time, &it->time);
 			if (chk < 0) {
-				*item = it->item;
+				item = it->item;
+				*data = item->data;
 				_tq_rem_queue(eq, it);
 				TQ_SET_STATE(eq, TQ_STATE_RUN);
 				TQ_UNLOCK(eq);
@@ -372,9 +378,9 @@ tq_result tq_pop_queue(tem_msg_queue queue, teq_node **item, int flags)
 		if (res == 0) {
 			TQ_LOG("time out\n");
 			TQ_LOCK(eq);
-			*item = it->item;
+			item = it->item;
+			*data = item->data;
 			_tq_rem_queue(eq, it);
-			//free(it);
 			TQ_SET_STATE(eq, TQ_STATE_RUN);
 			TQ_UNLOCK(eq);
 			TQ_RETURN(0);
@@ -401,11 +407,16 @@ tq_result tq_pop_queue(tem_msg_queue queue, teq_node **item, int flags)
 }
 
 
-tq_result tq_push_queue(tem_msg_queue queue, teq_node *item, uint16_t delay)
+tq_result tq_push_queue(tem_msg_queue queue, void *data, uint16_t delay)
 {
 	TQ_ENTRY;
 
 	struct tiny_evtq *eq = queue;
+	teq_node *item = tq_create_node((void *)data);
+	if (!item) {
+		TQ_RETURN(TQ_NOMEM);
+	}
+	item->data = data;
 
 	TQ_LOCK(eq);
 

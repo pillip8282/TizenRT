@@ -26,7 +26,7 @@
 #include <arpa/inet.h>
 
 #include <tiny_evtmgr.h>
-#include <nic_server.h>
+#include <nic_monitor.h>
 #include <nic_util.h>
 
 static tem_hnd g_handle;
@@ -62,6 +62,17 @@ static void _ns_deinit(void)
 	return;
 }
 
+static void *_ns_remove_message(tem_msg *msg)
+{
+	nic_msg_s *tmp = msg->data;
+	if (tmp && tmp->data) {
+		free(tmp->data);
+	}
+	free(msg->data);
+	free(msg);
+	return 0;
+}
+
 static void *_ns_process(tem_msg *tmsg)
 {
 	NIC_ENTRY;
@@ -70,21 +81,12 @@ static void *_ns_process(tem_msg *tmsg)
 		NIC_ERR;
 		return 0;
 	}
-
 	int res = sendto(g_sock, (void *)msg->data, msg->len, 0, (struct sockaddr *)&g_nc_addr, sizeof(g_nc_addr));
 	if (res <= 0) {
 		NIC_ERR;
 		NIC_LOG("res = %d\n", res);
-		return 0;
 	}
-	free(msg->data);
-	free(msg);
-}
-
-static void *_ns_remove_message(tem_msg *msg)
-{
-	// ToDo
-	return 0;
+	_ns_remove_message(tmsg);
 }
 
 int32_t _nic_dup(nic_msg_s *src_msg, nic_msg_s **dest_msg)
@@ -96,10 +98,9 @@ int32_t _nic_dup(nic_msg_s *src_msg, nic_msg_s **dest_msg)
 	}
 
 	(*dest_msg)->len = src_msg->len;
-	(*dest_msg)->data = (nic_msg_s *)malloc(sizeof((*dest_msg)->len));
+	(*dest_msg)->data = (nic_msg_s *)malloc((*dest_msg)->len);
 	if (!((*dest_msg)->data)) {
 		NIC_ERR;
-		free(*dest_msg);
 		return -1;
 	}
 	memcpy((*dest_msg)->data, src_msg->data, (*dest_msg)->len);
@@ -174,10 +175,11 @@ nic_result_s nic_broadcast_event(nic_msg_s *nmsg)
 		NIC_ERR;
 		return NIC_FAIL;
 	}
-
 	tem_msg *msg = (tem_msg *)malloc(sizeof(tem_msg));
 	if (!msg) {
 		NIC_ERR;
+		free(nmsg->data);
+		free (msg);
 		return NIC_FAIL;
 	}
 
@@ -185,15 +187,19 @@ nic_result_s nic_broadcast_event(nic_msg_s *nmsg)
 	int32_t res = _nic_dup(nmsg, &dmsg);
 	if (res < 0) {
 		NIC_ERR;
+		free(nmsg->data);
+		free (msg);
 		return NIC_FAIL;
 	}
 
 	msg->data = dmsg;
 
 	tem_result tres = tiny_evtmgr_add_msg(g_handle, msg, 0);
+
 	if (tres != TINY_EVTMGR_SUCCESS) {
 		return NIC_FAIL;
 	}
+
 	return NIC_SUCCESS;
 }
 
