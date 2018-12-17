@@ -302,7 +302,7 @@ static void *_nc_remove_message(tem_msg *msg)
  * @return
  * @since
  */
-nic_result_s nic_client_register(nic_event_handler handler, void *data, nc_handle *hnd)
+nic_result_s nic_client_register(nic_event_handler handler, void *data, nc_handle *hnd, nic_type type)
 {
 	NIC_ENTRY;
 	tem_result res = TINY_EVTMGR_FAIL;
@@ -316,7 +316,7 @@ nic_result_s nic_client_register(nic_event_handler handler, void *data, nc_handl
 		return NIC_FAIL;
 	}
 
-	struct nc_context *ctx = _nc_list_add(handler, data);
+	struct nc_context *ctx = _nc_list_add(handler, data, type);
 	if (!res) {
 		NIC_ERR;
 		NC_UNLOCK(g_api_lock);

@@ -37,10 +37,13 @@ typedef struct _nic_msg{
 	void *data;
 } nic_msg_s;
 
-/* TODO list
- * 1. TYPE of NIC
- * 2. TYPE of EVT
- */
+typedef enum {
+	NIC_TYPE_WIFI,
+	NIC_TYPE_BT,
+	NIC_TYPE_ETHERNET,
+	NIC_TYPE_CELLULAR,
+	NIC_TYPE_MAX,
+} nic_type;
 
 ////////////////////////////////////////////////
 //
@@ -53,11 +56,7 @@ typedef void *(*serv_handler)(nic_msg_s *msg); // unnecessary callback!!!
 nic_result_s nic_server_start(void);
 nic_result_s nic_server_stop(void);
 
-/* hidden API to test NIC */
 nic_result_s nic_broadcast_event(nic_msg_s *msg);
-
-/* TODO: Send msg to specific client_handler based on NIC & EVT */
-
 
 ////////////////////////////////////////////////
 //
@@ -70,7 +69,7 @@ nic_result_s nic_broadcast_event(nic_msg_s *msg);
 typedef void *(*nic_event_handler)(nic_msg_s *msg, void *arg);
 
 typedef struct nc_context *nc_handle;
-nic_result_s nic_client_register(nic_event_handler handler, void *data, nc_handle *hnd);
+nic_result_s nic_client_register(nic_event_handler handler, void *data, nc_handle *hnd, nic_type type);
 nic_result_s nic_client_unregister(nc_handle hnd);
 
 /* TODO: Register NIC & EVT type */

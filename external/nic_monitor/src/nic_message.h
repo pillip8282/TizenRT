@@ -20,7 +20,7 @@ typedef enum {
 
 typedef struct nic_context *nic_msg_handle;
 
-nic_result_s nic_init_msg(nic_msg_handle *hnd);
+nic_result_s nic_init_msg(nic_msg_handle *hnd, nic_type type);
 nic_result_s nic_deinit_msg(nic_msg_handle hnd);
 
 nic_result_s nic_set_int(nic_msg_handle hnd, int data);

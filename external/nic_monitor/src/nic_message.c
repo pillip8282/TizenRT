@@ -24,6 +24,7 @@ struct nic_context {
 	int next_idx;
 	struct nic_packet *head; //packet list
 	int cnt;
+	nic_type type;
 };
 
 /**
@@ -74,6 +75,9 @@ int _nic_calc_buflen(nic_msg_handle hnd)
 	int buf_len = 0;
 
 	if (hnd->head) {
+		
+		//NIC_TYPE
+		buf_len += sizeof(nic_type);
 		for (prev = (struct nic_packet *)hnd->head; prev; prev = prev->next) {
 			//data length
 			buf_len += sizeof(int);
@@ -91,7 +95,7 @@ int _nic_calc_buflen(nic_msg_handle hnd)
 /**
  * APIs
  */
-nic_result_s nic_init_msg(nic_msg_handle *hnd)
+nic_result_s nic_init_msg(nic_msg_handle *hnd, nic_type type)
 {
 	struct nic_context *pkt_list = (struct nic_context *)malloc(sizeof(struct nic_context));
 	if(!pkt_list) {
@@ -101,6 +105,7 @@ nic_result_s nic_init_msg(nic_msg_handle *hnd)
 	pkt_list->head = NULL;
 	pkt_list->cnt = 0;
 	pkt_list->next_idx = 0;
+	pkt_list->type = type;
 	*hnd = pkt_list;
 
 	return NIC_SUCCESS;
@@ -258,6 +263,8 @@ nic_result_s nic_gen_msg(nic_msg_handle hnd, uint8_t **buf, int *buf_len)
 		return NIC_MEM_FAIL;
 	}
 	if (hnd->head) {
+		memcpy(new_buf, &(hnd->type), sizeof(nic_type));
+		pos += sizeof(nic_type);
 		for (prev = (struct nic_packet *)hnd->head; prev; prev = prev->next) {
 			ENCODE_PACKET(new_buf, prev->item, prev->item.data_len, pos);
 		}
@@ -277,6 +284,13 @@ nic_result_s nic_gen_msg(nic_msg_handle hnd, uint8_t **buf, int *buf_len)
 nic_result_s nic_get_msg(char *buf, int buf_len, nic_msg_handle hnd)
 {
 	int pos = 0;
+	if(hnd) {
+		memcpy(&hnd->type, buf, sizeof(nic_type));
+		pos += sizeof(nic_type);
+	} else {
+		NIC_ERR;
+		return NIC_FAIL;
+	}
 	while (pos + 1 < buf_len) {
 		struct nic_packet *pkt = (struct nic_packet *)malloc(sizeof(struct nic_packet));
 		if(!pkt) {

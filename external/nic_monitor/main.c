@@ -43,7 +43,7 @@ static void *client1_handler(nic_msg_s *msg, void *arg)
 {
 	NIC_ENTRY;
 	nic_msg_handle msg_hnd;
-	nic_init_msg(&msg_hnd);
+	nic_init_msg(&msg_hnd, NIC_TYPE_WIFI);
 	nic_get_msg(msg->data, msg->len, msg_hnd);
 	NIC_LOG("client #1: receive msg (%p, %p)\n", msg, arg);
 	nic_item_type type;
@@ -60,7 +60,7 @@ static void *client2_handler(nic_msg_s *msg, void *arg)
 {
 	NIC_ENTRY;
 	nic_msg_handle msg_hnd;
-	nic_init_msg(&msg_hnd);
+	nic_init_msg(&msg_hnd, NIC_TYPE_BT);
 	nic_get_msg(msg->data, msg->len, msg_hnd);
 	NIC_LOG("client #2: receive msg (%p, %p)\n", msg, arg);
 	nic_item_type type;
@@ -86,14 +86,14 @@ static void basic_test1(void)
     // run client
 	nc_handle c1;
 	nc_handle c2;
-	NIC_RESULT(nic_client_register(client1_handler, 0, &c1));
-	NIC_RESULT(nic_client_register(client2_handler, 0, &c2));
+	NIC_RESULT(nic_client_register(client1_handler, 0, &c1, NIC_TYPE_WIFI));
+	NIC_RESULT(nic_client_register(client2_handler, 0, &c2, NIC_TYPE_BT));
 
     // create a event in server and check that both clients receive event.
 	nic_msg_s msg;
 	nic_msg_handle msg_hnd;
 
-	nic_init_msg(&msg_hnd);
+	nic_init_msg(&msg_hnd, NIC_TYPE_WIFI);
 	nic_set_float(msg_hnd, 10.1);
 	nic_set_string(msg_hnd, data_s1);
 	nic_set_int(msg_hnd, 101010);
@@ -109,11 +109,8 @@ static void basic_test1(void)
 	NIC_LOG("wait event\n");
 	sleep(1);
 
-    // terminate client 1
-	NIC_RESULT(nic_client_unregister(c1));
-
 	//generate a event and check that client1 receive event.
-	nic_init_msg(&msg_hnd);
+	nic_init_msg(&msg_hnd, NIC_TYPE_BT);
 	nic_set_float(msg_hnd, 20.2);
 	nic_set_string(msg_hnd, data_s2);
 	nic_set_int(msg_hnd, 202020);
@@ -128,11 +125,11 @@ static void basic_test1(void)
 	NIC_LOG("wait second event\n");
 	sleep(1); // wait
 
-	// terminate client 2
-	NIC_RESULT(nic_client_unregister(c2));
+    // terminate client 1
+	NIC_RESULT(nic_client_unregister(c1));
 
 	// generate a event and check that nothing happens
-	nic_init_msg(&msg_hnd);
+	nic_init_msg(&msg_hnd, NIC_TYPE_WIFI);
 	nic_set_float(msg_hnd, 30.3);
 	nic_set_string(msg_hnd, data_s3);
 	nic_set_int(msg_hnd, 303030);
@@ -144,6 +141,8 @@ static void basic_test1(void)
 	nic_broadcast_event(&msg);
 	free(msg.data);
 
+	// terminate client 2
+	NIC_RESULT(nic_client_unregister(c2));
 	NIC_RESULT(nic_server_stop());
 
 	NIC_OUT;

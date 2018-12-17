@@ -61,7 +61,7 @@ void _nc_list_init(void)
 	NC_UNLOCK(g_nc_lock);
 }
 
-struct nc_context* _nc_list_add(nic_event_handler evt, void *data)
+struct nc_context* _nc_list_add(nic_event_handler evt, void *data, nic_type type)
 {
 	NIC_ENTRY;
 	NC_LOCK(g_nc_lock);
@@ -69,6 +69,7 @@ struct nc_context* _nc_list_add(nic_event_handler evt, void *data)
 	wrapper->item.handler = evt;
 	wrapper->item.data = data;
 	wrapper->next = NULL;
+	wrapper->type = type;
 
 	struct nc_wrapper *cur;
 	if (!g_nc_list.head) {
@@ -139,11 +140,12 @@ void* _nc_list_msg(char *buf, int buflen)
 	nic_msg_s msg;
 	msg.len = buflen;
 	msg.data = buf;
-
+	nic_type target;
+	memcpy(&target, buf, sizeof(nic_type));
 	NC_LOCK(g_nc_lock);
 	struct nc_wrapper *cur;
 	for (cur = g_nc_list.head; cur; cur = cur->next) {
-		if (cur->item.handler) {
+		if (cur->item.handler && cur->type == target) {
 			cur->item.handler(&msg, cur->item.data);
 		}
 	}

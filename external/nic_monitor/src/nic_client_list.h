@@ -30,6 +30,7 @@ struct nc_context {
 struct nc_wrapper {
 	struct nc_context item;
 	struct nc_wrapper *next;
+	nic_type type;
 };
 
 struct nc_list {
@@ -38,7 +39,7 @@ struct nc_list {
 };
 
 void _nc_list_init(void);
-struct nc_context* _nc_list_add(nic_event_handler evt, void *data);
+struct nc_context* _nc_list_add(nic_event_handler evt, void *data, nic_type type);
 void _nc_list_remove(struct nc_context *info);
 int32_t _nc_list_empty(void);
 int32_t _nc_check_dup(nic_event_handler func);
