@@ -23,6 +23,12 @@
 namespace media {
 namespace utils {
 
+#ifdef __GNUC__
+#define POPCOUNT(x) __builtin_popcount(x)
+#else
+#define POPCOUNT(x) popcount(x)
+#endif
+
 // Mine-Type for audio stream
 static const std::string AAC_MIME_TYPE = "audio/aac";
 static const std::string AACP_MIME_TYPE = "audio/aacp";
@@ -516,9 +522,6 @@ bool createWavHeader(FILE *fp)
 	header = (struct wav_header_s *)malloc(sizeof(struct wav_header_s));
 	if (!header) {
 		meddbg("fail to malloc buffer\n");
-		if (fclose(fp) == 0) {
-			fp = nullptr;
-		}
 		return false;
 	}
 
@@ -527,15 +530,16 @@ bool createWavHeader(FILE *fp)
 	ret = fwrite(header, sizeof(unsigned char), WAVE_HEADER_LENGTH, fp);
 	if (ret != WAVE_HEADER_LENGTH) {
 		meddbg("file write failed error %d\n", errno);
+		free(header);
 		return false;
 	}
 	if (fseek(fp, WAVE_HEADER_LENGTH, SEEK_SET) != 0) {
 		meddbg("file seek failed error\n");
+		free(header);
 		return false;
 	}
-	if (header != NULL) {
-		free(header);
-	}
+
+	free(header);
 	return true;
 }
 
@@ -553,8 +557,6 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 		return false;
 	}
 
-	struct wav_header_s *header;
-	header = (struct wav_header_s *)malloc(sizeof(struct wav_header_s));
 	uint32_t byteRate = 0;
 	uint16_t bitPerSample = 0;
 	uint16_t blockAlign = 0;
@@ -574,17 +576,19 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 	blockAlign = channel * (bitPerSample >> 3);
 	byteRate = sampleRate * blockAlign;
 
+	struct wav_header_s *header;
+	header = (struct wav_header_s *)malloc(sizeof(struct wav_header_s));
 	if (header == NULL) {
 		meddbg("malloc failed error\n");
 		return false;
 	}
 
-	strcpy(header->headerRiff, "RIFF");
+	strncpy(header->headerRiff, "RIFF", 4);
 
 	header->riffSize = fileSize - 8;
 
-	strcpy(header->headerWave, "WAVE");
-	strcpy(header->headerFmt, "fmt ");
+	strncpy(header->headerWave, "WAVE", 4);
+	strncpy(header->headerFmt, "fmt ", 4);
 
 	header->fmtSize = 16;
 	header->format = 1;
@@ -594,7 +598,7 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 	header->blockAlign = blockAlign;
 	header->bitPerSample = bitPerSample;
 
-	strcpy(header->headerData, "data");
+	strncpy(header->headerData, "data", 4);
 
 	header->dataSize = fileSize - WAVE_HEADER_LENGTH;
 
@@ -603,13 +607,73 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 
 	if (ret != WAVE_HEADER_LENGTH) {
 		meddbg("file write failed error %d\n", errno);
+		free(header);
 		return false;
 	}
-	if (header != NULL) {
-		free(header);
+
+	free(header);
+	return true;
+}
+
+#ifndef __GNUC__
+static int32_t popcount(uint32_t x)
+{
+	x -= (x >> 1) & 0x55555555;
+	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+	x = (x + (x >> 4)) & 0x0F0F0F0F;
+	x += x >> 8;
+	x += x >> 16;
+	return x & 0x0000003F;
+}
+#endif
+
+unsigned int splitChannel(unsigned int layout, const signed short *stream, unsigned int frames, unsigned int channels, ...)
+{
+	uint32_t ret = 0;
+	if (stream == NULL) {
+		meddbg("invalid audio stream!\n");
+		return ret;
 	}
 
-	return true;
+	uint32_t spf = POPCOUNT(layout); // samples per frame
+	uint32_t mask, i, j;
+	const int16_t *sdata;
+	int16_t *buffer;
+
+	va_list ap;
+	va_start(ap, channels);
+
+	for (i = 0; i < channels; i++) {
+		mask = va_arg(ap, uint32_t);
+		buffer = va_arg(ap, int16_t *);
+
+		// Check params validation
+		if (POPCOUNT(mask) != 1) {
+			meddbg("specified channel must be a single channel! i:%u, mask:0x%x\n", i, mask);
+			continue;
+		}
+
+		if ((layout & mask) == 0) {
+			meddbg("specified channel does not exist! layout: 0x%x, i:%u, mask:0x%x\n", layout, i, mask);
+			continue;
+		}
+
+		if (buffer == NULL) {
+			meddbg("invalid output buffer! i:%u, mask:0x%x\n", i, mask);
+			continue;
+		}
+
+		sdata = stream + POPCOUNT(layout & (mask - 1));
+		for (j = 0; j < frames; j++) {
+			*buffer++ = *sdata;
+			sdata += spf;
+		}
+
+		ret |= mask;
+	}
+
+	va_end(ap);
+	return ret;
 }
 } // namespace util
 } // namespace media
