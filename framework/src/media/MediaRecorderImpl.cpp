@@ -72,13 +72,6 @@ void MediaRecorderImpl::createRecorder(recorder_result_t& ret)
 		return notifySync();
 	}
 
-	audio_manager_result_t result = init_audio_stream_in();
-	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("Fail to initialize input audio stream : %d\n", result);
-		ret = RECORDER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync();
-	}
-
 	mCurState = RECORDER_STATE_IDLE;
 	notifySync();
 }
@@ -563,6 +556,28 @@ void MediaRecorderImpl::setRecorderObserver(std::shared_ptr<MediaRecorderObserve
 
 	mRecorderObserver = observer;
 	notifySync();
+}
+
+bool MediaRecorderImpl::isRecording()
+{
+	bool ret = false;
+	std::unique_lock<std::mutex> lock(mCmdMtx);
+	medvdbg("MediaRecorder isRecording\n");
+	RecorderWorker& mrw = RecorderWorker::getWorker();
+	if (!mrw.isAlive()) {
+		return ret;
+	}
+
+	/* Wait for other commands to complete. */
+	mrw.enQueue([&]() {
+		if (getState() == RECORDER_STATE_RECORDING) {
+			ret = true;
+		}
+		notifySync();
+	});
+	mSyncCv.wait(lock);
+
+	return ret;
 }
 
 recorder_result_t MediaRecorderImpl::setDuration(int second)
