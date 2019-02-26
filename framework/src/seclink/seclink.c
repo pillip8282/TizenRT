@@ -1,3 +1,20 @@
+/****************************************************************************
+ *
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
 #include <tinyara/config.h>
 
 #include <stdio.h>
@@ -13,17 +30,17 @@
 #endif
 #define SECLINK_PATH "/dev/seclink"
 
-#define SL_TAG "seclink"
-
 #define SL_LOG printf
+
+#define SL_TAG "[SECLINK]"
 
 #define SL_ERR(fd)														\
 	do {																\
-		SL_LOG("[ERR:%s] %s %s:%d ret(%d) code(%s)\n",					\
+		SL_LOG(SL_TAG"[ERR:%s] %s %s:%d ret(%d) code(%s)\n",			\
 			   SL_TAG, __FUNCTION__, __FILE__, __LINE__, fd, strerror(errno)); \
 	} while(0)
 
-#define SL_CALL(hnd, code, param)						\
+#define SL_CALL(hnd, code, param)										\
 	do {																\
 		int res = ioctl(hnd->fd, code, (unsigned long)((uintptr_t)&param) ); \
 		if(res < 0) {													\
@@ -32,6 +49,10 @@
 		}																\
 	} while (0)
 
+#define SL_ENTER														\
+	do {																\
+		SL_LOG(SL_TAG"%s\t%s:%d\n", __FUNCTION__, __FILE__, __LINE__);	\
+	} while (0)
 
 struct _seclink_s_ {
 	int fd;
@@ -54,6 +75,8 @@ struct _seclink_s_ {
 /*  Common */
 int sl_init(sl_ctx *hnd)
 {
+	SL_ENTER;
+
 	int fd = open(SECLINK_PATH, O_RDWR);
 	if (fd < 0) {
 		SL_ERR(fd);
@@ -75,6 +98,8 @@ int sl_init(sl_ctx *hnd)
 
 int sl_deinit(sl_ctx hnd)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -90,6 +115,8 @@ int sl_deinit(sl_ctx hnd)
 /*  key manager */
 int sl_set_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *prikey)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -103,6 +130,8 @@ int sl_set_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, hal_data *key, h
 
 int sl_get_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, _OUT_ hal_data *key)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -116,6 +145,8 @@ int sl_get_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx, _OUT_ hal_data *
 
 int sl_remove_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -129,6 +160,8 @@ int sl_remove_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx)
 
 int sl_generate_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -144,6 +177,8 @@ int sl_generate_key(sl_ctx hnd, hal_key_type mode, uint32_t key_idx)
 /*  Authenticate */
 int sl_generate_random(sl_ctx hnd, uint32_t len, _OUT_ hal_data *random)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -157,6 +192,8 @@ int sl_generate_random(sl_ctx hnd, uint32_t len, _OUT_ hal_data *random)
 
 int sl_get_hash(sl_ctx hnd, hal_hash_type mode, hal_data *input, _OUT_ hal_data *hash)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -170,6 +207,8 @@ int sl_get_hash(sl_ctx hnd, hal_hash_type mode, hal_data *input, _OUT_ hal_data 
 
 int sl_get_hmac(sl_ctx hnd, hal_hmac_type mode, hal_data *input, uint32_t key_idx, _OUT_ hal_data *hmac)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -183,6 +222,8 @@ int sl_get_hmac(sl_ctx hnd, hal_hmac_type mode, hal_data *input, uint32_t key_id
 
 int sl_rsa_sign_md(sl_ctx hnd, hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, _OUT_ hal_data *sign)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -196,6 +237,8 @@ int sl_rsa_sign_md(sl_ctx hnd, hal_rsa_mode mode, hal_data *hash, uint32_t key_i
 
 int sl_rsa_verify_md(sl_ctx hnd, hal_rsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -209,6 +252,8 @@ int sl_rsa_verify_md(sl_ctx hnd, hal_rsa_mode mode, hal_data *hash, hal_data *si
 
 int sl_ecdsa_sign_md(sl_ctx hnd, hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, _OUT_ hal_data *sign)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -222,6 +267,8 @@ int sl_ecdsa_sign_md(sl_ctx hnd, hal_ecdsa_mode mode, hal_data *hash, uint32_t k
 
 int sl_ecdsa_verify_md(sl_ctx hnd, hal_ecdsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -235,6 +282,8 @@ int sl_ecdsa_verify_md(sl_ctx hnd, hal_ecdsa_mode mode, hal_data *hash, hal_data
 
 int sl_dh_generate_param(sl_ctx hnd, uint32_t dh_idx, _INOUT_ hal_dh_data *dh_param)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -248,6 +297,8 @@ int sl_dh_generate_param(sl_ctx hnd, uint32_t dh_idx, _INOUT_ hal_dh_data *dh_pa
 
 int sl_dh_compute_shared_secret(sl_ctx hnd, hal_dh_data *dh_param, uint32_t dh_idx, _OUT_ hal_data *shared_secret)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -261,6 +312,8 @@ int sl_dh_compute_shared_secret(sl_ctx hnd, hal_dh_data *dh_param, uint32_t dh_i
 
 int sl_ecdh_compute_shared_secret(sl_ctx hnd, hal_ecdh_data *ecdh_mode, uint32_t key_idx, _OUT_ hal_data *shared_secret)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -274,6 +327,8 @@ int sl_ecdh_compute_shared_secret(sl_ctx hnd, hal_ecdh_data *ecdh_mode, uint32_t
 
 int sl_set_certificate(sl_ctx hnd, uint32_t cert_idx, hal_data *cert_in)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -287,6 +342,8 @@ int sl_set_certificate(sl_ctx hnd, uint32_t cert_idx, hal_data *cert_in)
 
 int sl_get_certificate(sl_ctx hnd, uint32_t cert_idx, _OUT_ hal_data *cert_out)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -300,6 +357,8 @@ int sl_get_certificate(sl_ctx hnd, uint32_t cert_idx, _OUT_ hal_data *cert_out)
 
 int sl_remove_certificate(sl_ctx hnd, uint32_t cert_idx)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -313,6 +372,8 @@ int sl_remove_certificate(sl_ctx hnd, uint32_t cert_idx)
 
 int sl_get_factorykey_data(sl_ctx hnd, uint32_t key_idx, hal_data *data)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -328,6 +389,8 @@ int sl_get_factorykey_data(sl_ctx hnd, uint32_t key_idx, hal_data *data)
 /*  Crypto */
 int sl_aes_encrypt(sl_ctx hnd, hal_data *dec_data, hal_aes_param *aes_param, uint32_t key_idx, _OUT_ hal_data *enc_data)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -341,6 +404,8 @@ int sl_aes_encrypt(sl_ctx hnd, hal_data *dec_data, hal_aes_param *aes_param, uin
 
 int sl_aes_decrypt(sl_ctx hnd, hal_data *enc_data, hal_aes_param *aes_param, uint32_t key_idx, _OUT_ hal_data *dec_data)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -354,6 +419,8 @@ int sl_aes_decrypt(sl_ctx hnd, hal_data *enc_data, hal_aes_param *aes_param, uin
 
 int sl_rsa_encrypt(sl_ctx hnd, hal_data *dec_data, uint32_t key_idx, _OUT_ hal_data *enc_data)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -367,6 +434,8 @@ int sl_rsa_encrypt(sl_ctx hnd, hal_data *dec_data, uint32_t key_idx, _OUT_ hal_d
 
 int sl_rsa_decrypt(sl_ctx hnd, hal_data *enc_data, uint32_t key_idx, _OUT_ hal_data *dec_data)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -382,6 +451,8 @@ int sl_rsa_decrypt(sl_ctx hnd, hal_data *enc_data, uint32_t key_idx, _OUT_ hal_d
 /*  Secure Storage */
 int sl_write_storage(sl_ctx hnd, uint32_t ss_idx, hal_data *data)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -395,6 +466,8 @@ int sl_write_storage(sl_ctx hnd, uint32_t ss_idx, hal_data *data)
 
 int sl_read_storage(sl_ctx hnd, uint32_t ss_idx, _OUT_ hal_data *data)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
@@ -408,6 +481,8 @@ int sl_read_storage(sl_ctx hnd, uint32_t ss_idx, _OUT_ hal_data *data)
 
 int sl_delete_storage(sl_ctx hnd, uint32_t ss_idx)
 {
+	SL_ENTER;
+
 	SL_CHECK_VALID(hnd);
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
