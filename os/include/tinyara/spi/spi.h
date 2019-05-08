@@ -495,7 +495,7 @@ extern "C" {
 
 FAR struct spi_dev_s *up_spiinitialize(int port);
 
-FAR int spi_uioregister(FAR const char *path, FAR struct spi_dev_s *dev);
+FAR int spi_uioregister(FAR struct spi_dev_s *spi, int bus);
 
 #undef EXTERN
 #if defined(__cplusplus)

@@ -55,8 +55,15 @@
 ifeq ($(CONFIG_SPI),y)
 
 # Include the selected SPI drivers
-ifeq ($(CONFIG_SPI_USERIO),y)
-CSRCS += spi_uio.c
+# ifeq ($(CONFIG_SPI_USERIO),y)
+# CSRCS += spi_uio.c
+# endif
+
+ifeq ($(CONFIG_SPI_EXCHANGE),y)
+  CSRCS += spi_transfer.c
+  ifeq ($(CONFIG_SPI_DRIVER),y)
+    CSRCS += spi_driver.c
+  endif
 endif
 
 ifeq ($(CONFIG_SPI_BITBANG),y)
