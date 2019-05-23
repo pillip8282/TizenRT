@@ -15,7 +15,16 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
+/**
+ * @defgroup Security Security
+ * @ingroup Security
+ * @brief Provides APIs for Security
+ * @{
+ */
+/**
+ * @file security/security_common.h
+ * @brief Provides Common APIs for Security
+ */
 #ifndef _SECURITY_API_COMMON_H__
 #define _SECURITY_API_COMMON_H__
 
@@ -26,14 +35,24 @@
 #define SECURITY_MAX_SS_BUF           4096
 #define SECURITY_MAX_BUF              SECURITY_MAX_SS_BUF
 
+/**
+ * @brief Handle to get the access to secure resource
+ */
 struct security_ctx;
 typedef struct security_ctx *security_handle;
 
+/**
+ * @brief Common data for input and output in security API
+ */
 typedef struct _security_data {
 	void *data;
 	unsigned int length;
 } security_data;
 
+
+/**
+ * @brief Error type of security API
+ */
 typedef enum {
 	SECURITY_OK,
 
@@ -61,6 +80,9 @@ typedef enum {
 	SECURITY_NOT_SUPPORT,
 } security_error;
 
+/**
+ * @brief Contains CSR(Certificate Signing request) is a block of encoded text that is given to a CA when applying for an SSL Certificate
+ */
 typedef struct _security_csr {
 	unsigned char	issuer_country[128];
 	unsigned char	issuer_organization[128];
@@ -76,12 +98,18 @@ typedef struct _security_csr {
 	unsigned int	cert_years;
 } security_csr;
 
+/**
+ * @brief RSA algorithm
+ */
 typedef enum {
 	RSASSA_PKCS1_V1_5,
 	RSASSA_PKCS1_PSS_MGF1,
 	RSASSA_UNKNOWN,
 } security_rsa_mode;
 
+/**
+ * @brief ECDSA algorithm
+ */
 typedef enum {
 	ECDSA_BRAINPOOL_P256R1,
 	ECDSA_BRAINPOOL_P384R1,
@@ -94,6 +122,9 @@ typedef enum {
 	ECDSA_UNKNOWN,
 } security_ecdsa_mode;
 
+/**
+ * @brief DH algorithm
+ */
 typedef enum {
 	DH_1024,
 	DH_2048,
@@ -101,6 +132,9 @@ typedef enum {
 	DH_UNKNOWN,
 } security_dh_mode;
 
+/**
+ * @brief Security algorithm
+ */
 typedef enum {
 	KEY_AES_128,
 	KEY_AES_192,
@@ -126,6 +160,9 @@ typedef enum {
 	KEY_UNKNOWN,
 } security_key_type;
 
+/**
+ * @brief HMAC key algorithm
+ */
 typedef enum {
 	HMAC_MD5,
 	HMAC_SHA1,
@@ -136,7 +173,9 @@ typedef enum {
 	HMAC_UNKNOWN,
 } security_hmac_mode;
 
-
+/**
+ * @brief AES mode
+ */
 typedef enum {
 	AES_ECB_NOPAD,
 	AES_ECB_ISO9797_M1,
@@ -152,6 +191,9 @@ typedef enum {
 	AES_UNKNOWN,
 } security_aes_mode;
 
+/**
+ * @brief HASH algorithm
+ */
 typedef enum {
 	HASH_MD5,
 	HASH_SHA1,
@@ -162,6 +204,9 @@ typedef enum {
 	HASH_UNKNOWN,
 } security_hash_mode;
 
+/**
+ * @brief RSA parameter
+ */
 typedef struct _security_rsa_param {
 	security_rsa_mode rsa_a;
 	security_hash_mode hash_t;
@@ -169,17 +214,26 @@ typedef struct _security_rsa_param {
 	uint32_t salt_byte_len;
 } security_rsa_param;
 
+/**
+ * @brief AES parameter
+ */
 typedef struct _security_aes_param {
 	security_aes_mode mode;
 	unsigned char *iv;
 	unsigned int iv_len;
 } security_aes_param;
 
+/**
+ * @brief ECDSA parameter
+ */
 typedef struct _security_ecdsa_param {
 	security_ecdsa_mode curve;
 	security_hash_mode hash_t;
 } security_ecdsa_param;
 
+/**
+ * @brief DH parameter
+ */
 typedef struct _security_dh_param {
 	security_dh_mode mode;
 	security_data *G;
@@ -187,20 +241,66 @@ typedef struct _security_dh_param {
 	security_data *pubkey;
 } security_dh_param;
 
+/**
+ * @brief ECDH parameter
+ */
 typedef struct _security_ecdh_param {
 	security_ecdsa_mode curve;
 	security_data *pubkey_x;
 	security_data *pubkey_y;
 } security_ecdh_param;
 
-#define SEC_DATA_INITIALIZER {NULL, 0}
-#define SEC_DHPARAM_INITIALIZER {DH_UNKNOWN, NULL, NULL}
 /**
- * Common
+ * @brief Initialize security_data
+ */
+#define SEC_DATA_INITIALIZER {NULL, 0}
+
+/**
+ * @brief Initialize DH parameter
+ */
+#define SEC_DHPARAM_INITIALIZER {DH_UNKNOWN, NULL, NULL}
+
+/**
+ * @brief Initialize Security framework and Secure resource in TizenRT for using API
+ * @details @b #include <security/security_api.h>
+ * @param[in] hnd The ID which uniquely accesses security resource
+ * @return On success, SECURITY_OK (i.e., 0) is returned. On failure, non-zero value is returned.
+ *
+ * @since TizenRT v2.1
  */
 security_error security_init(security_handle *hnd);
+
+/**
+ * @brief De-initialize security framework and let secure resource know that security will be not used.
+ * @details @b #include <security/security_api.h>
+ * @param[in] hnd The ID which uniquely accesses security resource
+ * @return On success, SECURITY_OK (i.e., 0) is returned. On failure, non-zero value is returned.
+ *
+ * @since TizenRT v2.1
+ */
 security_error security_deinit(security_handle hnd);
+
+/**
+ * @brief Free data allocated inside security_data
+ * @details @b #include <security/security_api.h>
+ * @param[in] data Data structure storing security information
+ * @return On success, SECURITY_OK (i.e., 0) is returned. On failure, non-zero value is returned.
+ *
+ * @since TizenRT v2.1
+ */
 security_error security_free_data(security_data *data);
+
+/**
+ * @brief Check the current status of security resource
+ * @details @b #include <security/security_api.h>
+ * @param[in] status Current status
+ * @return On success, SECURITY_OK (i.e., 0) is returned. On failure, non-zero value is returned.
+ *
+ * @since TizenRT v2.1
+ */
 security_error security_get_status(int *status);
 
 #endif // _SECURITY_API_COMMON_H__
+/**
+ * @}
+ */

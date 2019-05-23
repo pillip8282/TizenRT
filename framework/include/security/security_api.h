@@ -15,6 +15,17 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+/**
+ * @defgroup Security Security
+ * @ingroup Security
+ * @brief Provides APIs for Security
+ * @{
+ */
+/**
+ * @file security/security_api.h
+ * @brief Provides APIs for Security
+ */
+
 #ifndef __SECURITY_API_H__
 #define __SECURITY_API_H__
 
@@ -24,3 +35,7 @@
 #include "security_ss.h"
 
 #endif // __SECURITY_API_H__
+
+/**
+ *@}
+ */
