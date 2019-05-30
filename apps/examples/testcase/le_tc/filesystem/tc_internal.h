@@ -27,7 +27,9 @@
 **********************************************************/
 void tc_fs_procfs_main(void);
 void tc_fs_smartfs_procfs_main(void);
+#ifndef CONFIG_BUILD_PROTECTED
 void tc_fs_smartfs_mksmartfs(void);
+#endif // CONFIG_BUILD_PROTECTED
 
 void itc_fs_main(void);
 

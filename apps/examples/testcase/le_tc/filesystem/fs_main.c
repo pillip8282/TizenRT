@@ -3557,6 +3557,7 @@ static void tc_libc_stdio_ungetc(void)
 * @precondition     NA
 * @postcondition    NA
 */
+#ifndef CONFIG_BUILD_PROTECTED
 #ifdef CONFIG_BCH
 static void tc_fs_driver_ramdisk_ops(void)
 {
@@ -3602,6 +3603,8 @@ static void tc_fs_driver_ramdisk_ops(void)
 	TC_SUCCESS_RESULT();
 }
 #endif
+#endif // CONFIG_BUILD_PROTECTED
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -3728,9 +3731,13 @@ int tc_filesystem_main(int argc, char *argv[])
 #ifdef CONFIG_ITC_FS
 	itc_fs_main();
 #endif
+
+#ifndef CONFIG_BUILD_PROTECTED
 #if defined(CONFIG_TC_FS_PROCFS) && !defined(CONFIG_SMARTFS_MULTI_ROOT_DIRS)
 	tc_fs_smartfs_mksmartfs();
 #endif
+#endif // CONFIG_BUILD_PROTECTED
+
 	(void)tc_handler(TC_END, "FileSystem TC");
 
 	return 0;

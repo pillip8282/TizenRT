@@ -35,7 +35,9 @@
 #include <sys/stat.h>
 #include "tc_common.h"
 #include <stdbool.h>
+#ifndef CONFIG_BUILD_PROTECTED
 #include <tinyara/fs/mksmartfs.h>
+#endif
 
 #define PROCFS_TEST_MOUNTPOINT "/proc_test"
 #define MTD_PROCFS_PATH PROCFS_TEST_MOUNTPOINT"/mtd"
@@ -222,6 +224,7 @@ static int procfs_rewind_tc(const char *dirpath)
 
 	return OK;
 }
+#ifndef CONFIG_BUILD_PROTECTED
 #ifndef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 void tc_fs_smartfs_mksmartfs(void)
 {
@@ -236,6 +239,7 @@ void tc_fs_smartfs_mksmartfs(void)
 	TC_SUCCESS_RESULT();
 }
 #endif
+#endif // CONFIG_BUILD_PROTECTED
 
 #ifndef CONFIG_FS_PROCFS_EXCLUDE_SMARTFS
 void tc_fs_smartfs_procfs_main(void)
