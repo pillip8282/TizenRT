@@ -1,0 +1,12 @@
+arm-none-eabi-gdb ../build/output/bin/tinyara \
+				  -ex "set print pretty on"\
+				  -ex "tar remote:3333"\
+				  -ex "source parsing.gdb"\
+				  -ex "dir ../apps/examples/security_test/security_api/"\
+				  -ex "dir ../apps/system/utils/"\
+				  -ex "dir ../apps/examples/iperf2/"\
+				  -ex "dir ../apps/examples/testcase/"\
+				  -ex "dir ../apps/examples/hello/"\
+				  -ex "dir arch/arm/src/s5j/"\
+				  -ex "dir se/"\
+				  -ex "dir ../external/mbedtls/"
