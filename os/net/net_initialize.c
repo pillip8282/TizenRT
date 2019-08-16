@@ -60,7 +60,7 @@
 
 #include <debug.h>
 
-#include <tinyara/net/net.h>
+#include <tinyara/net/net_vfs.h>
 
 #include <sys/socket.h>
 

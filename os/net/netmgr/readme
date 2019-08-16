@@ -1,0 +1,130 @@
+#+BEGIN_SRC plantuml :file test.png
+  User -- netmgr_c
+  User -- netdev_mgr_c
+  VFS -- net_vfs
+  net_vfs -- netdev_ops_h
+  net_vfs -- netstack
+  net_vfs -- netsock
+  netsock *-- netsock_ops
+  netdev_h *-- netdev_ops_h
+  netdev_h -- lwnl80211_ops
+  netdev_h -- ethernet_ops
+  netdev_mgr_c *-- netdev_h
+  netdev_mgr_c - netdev_config_h
+  netmgr_c *-- net_vfs
+  netmgr_c *-- netdev_mgr_c
+  netmgr_c *-- nl_driver
+  netstack -- netstack_ops
+  netstack -- netstack_lwip
+  netstack_lwip *- netstack_ops_lwip
+  netdev_ops_h - nic_config
+
+
+  class netstack_lwip {
+      class netstack *get_netstack_lwip();
+  }
+
+  class lwnl80211_ops {
+      class connect_ap()
+  }
+
+  class netmgr_c {
+      class netdev_mgr ndev_mgr;
+      int netmgr_start(void *);
+      int netmgr_init(void *);
+  }
+
+  class netdev_mgr_c {
+      class netdev g_netdevices[CONFIG_NUM_NETDEV];
+      class netdev get_netdev(string name);
+      int register_netdev(class netdev_config_h config);
+      int netdev_count(); // return the number of registered devices
+  }
+
+  class netdev_config_h {
+
+  }
+
+  class nic_config {
+  }
+
+  class netdev_h {
+      string ifname;
+      void *nic; // this should be handled inside lwip wrapper
+      netdev_ops_h ops;
+  }
+
+  note top of netdev_ops_h: implementations related to lwIP
+  class netdev_ops_h {
+      void *init_nic(class nic_config);
+      int get_ip4addr(type);
+      int set_ip4addr(type, addr);
+      int get_ip6addr(type);
+      int set_ip6addr(type, addr);
+      int delete_ipaddr();
+      int get_hwaddr();
+      int set_hwaddr();
+      int get_mtu();
+      int get_flag();
+      int ifup();
+      int ifdown();
+      int dhcpc_start(); // optional
+      int dhcps_start(); // optional
+  }
+
+  class netdev_ops_lwip extends netdev_ops_h {
+  }
+
+  class net_vfs {
+      class netstack_ops s_ops;
+      int net_dup(int fd);
+      int net_clone(int fd);
+      int net_ioctl();
+      int net_fcntl();
+  }
+
+  class netsock {
+      void *data
+      class netsock_ops nsock_ops;
+  }
+
+  class netsock_ops {
+      void *getsock()
+  }
+
+  class netsock_ops_lwip extends netsock_ops {
+      void *getsock()
+  }
+
+  class netstack {
+      class netstack_ops nstack_ops;
+      class netstack *get_netstack();
+  }
+
+  note top of netstack_ops: implement VFS related operation
+  class netstack_ops {
+      int init();
+      int dup();
+      int clone(int fd);
+      int ioctl();
+      int fcntl();
+      int socket();
+      int send();
+      int recv();
+  }
+
+  class netstack_ops_lwip extends netstack_ops {
+      class netstack_ops *get_netstack_lwip();
+      int lwip_ns_init();
+      int lwip_ns_dup()
+  }
+
+  class nl_driver {
+      int register_nl_driver();
+      int unregister_nl_driver();
+  }
+#+END_SRC
+
+#+RESULTS:
+[[file:test.png]]
+

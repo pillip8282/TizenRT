@@ -74,7 +74,6 @@
 #include <debug.h>				/* For ndbg, vdbg */
 #include <tinyara/compiler.h>	/* For CONFIG_CPP_HAVE_WARNING */
 #include <arch/irq.h>			/* For irqstore() and friends -- REVISIT */
-#include <tinyara/net/net.h>	/* For net_lock() and friends */
 #ifndef CONFIG_NET_LWIP
 #include <tinyara/net/arp.h>	/* For low-level ARP interfaces -- REVISIT */
 #endif

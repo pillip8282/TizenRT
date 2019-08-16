@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,9 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 /****************************************************************************
- * net/socket/net_close.c
  *
- *   Copyright (C) 2007-2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007, 2009-2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,54 +49,8 @@
  *
  ****************************************************************************/
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
-
-#include <tinyara/config.h>
-#ifdef CONFIG_NET
-
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include <stdint.h>
-#include <stdbool.h>
-#include <errno.h>
-#include <debug.h>
-#include <assert.h>
-
-#include <arch/irq.h>
-#include <tinyara/net/net.h>
-
-#include "socket/socket.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Types
- ****************************************************************************/
-
-/****************************************************************************
- * Function: net_close
- *
- * Description:
- *   Performs the close operation on socket descriptors
- *
- * Parameters:
- *   sockfd   Socket descriptor of socket
- *
- * Returned Value:
- *   0 on success; -1 on error with errno set appropriately.
- *
- * Assumptions:
- *
- ****************************************************************************/
-
-int net_close(int sockfd)
-{
-	return closesocket(sockfd);
-}
-
-#endif							/* CONFIG_NET */
+#ifndef _NETMGR_H__
+#define _NETMGR_H__
+int netmgr_init(void *);
+int netmgr_start(void *);
+#endif // _NETMGR_H__

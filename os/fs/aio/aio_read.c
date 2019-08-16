@@ -63,8 +63,6 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <tinyara/net/net.h>
-
 #include "aio/aio.h"
 
 #ifdef CONFIG_FS_AIO

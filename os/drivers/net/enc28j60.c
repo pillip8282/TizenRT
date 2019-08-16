@@ -82,17 +82,7 @@
 #include <tinyara/clock.h>
 #include <tinyara/net/enc28j60.h>
 #include <tinyara/net/ethernet.h>
-#include <tinyara/net/net.h>
 #include <tinyara/sched.h>
-
-#ifdef CONFIG_NET_LWIP
-#include <net/lwip/pbuf.h>
-#include <net/lwip/opt.h>
-#include <net/lwip/netif.h>
-#include <net/lwip/tcpip.h>
-#include <net/lwip/ipv4/ip.h>
-#define net_driver_s netif
-#endif
 
 #include "enc28j60.h"
 

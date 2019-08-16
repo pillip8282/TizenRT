@@ -64,7 +64,7 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
-#include <tinyara/net/net.h>
+#include <tinyara/net/net_vfs.h>
 
 /****************************************************************************
  * Private Functions

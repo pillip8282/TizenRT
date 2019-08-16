@@ -62,7 +62,7 @@
 #include <assert.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/net/net.h>
+#include <tinyara/net/net_vfs.h>
 #include <tinyara/sched.h>
 #include <tinyara/cancelpt.h>
 

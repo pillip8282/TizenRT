@@ -62,10 +62,6 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/cancelpt.h>
 
-#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
-#include <tinyara/net/net.h>
-#endif
-
 #include "inode/inode.h"
 
 /****************************************************************************

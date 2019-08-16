@@ -28,7 +28,6 @@
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/net/net.h>
 
 #include <tinyara/config.h>
 #include <sys/types.h>

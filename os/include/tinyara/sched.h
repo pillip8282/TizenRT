@@ -79,7 +79,6 @@
 #include <tinyara/irq.h>
 #include <tinyara/mm/shm.h>
 #include <tinyara/fs/fs.h>
-#include <tinyara/net/net.h>
 
 #include <arch/arch.h>
 

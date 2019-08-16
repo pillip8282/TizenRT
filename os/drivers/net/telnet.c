@@ -78,7 +78,6 @@
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/net/net.h>
 #include <tinyara/net/telnet.h>
 
 #ifdef CONFIG_NETDEV_TELNET

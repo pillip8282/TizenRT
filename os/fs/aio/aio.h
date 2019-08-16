@@ -65,7 +65,6 @@
 #include <queue.h>
 
 #include <tinyara/wqueue.h>
-#include <tinyara/net/net.h>
 
 #ifdef CONFIG_FS_AIO
 

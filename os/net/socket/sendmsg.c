@@ -88,13 +88,5 @@
  *
  ****************************************************************************/
 
-ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags)
-{
-	uint8_t *buf = (uint8_t *)(msg->msg_iov->iov_base);
-	size_t len = msg->msg_iov->iov_len;
-	struct sockaddr *to = (struct sockaddr *)msg->msg_name;
-	int *addrlen = (int *)&(msg->msg_namelen);
 
-	return sendto(sockfd, buf, len, flags, to, (socklen_t) *addrlen);
-}
 #endif							/* CONFIG_NET */

@@ -63,7 +63,7 @@ NET_CSRCS   = net_initialize.c
 #LWIP stack support
 
 LWIP_ASRCS   =
-LWIP_CSRCS   = 
+LWIP_CSRCS   =
 
 # Socket support
 
@@ -81,7 +81,7 @@ BLUETOOTH_CSRCS =
 VPATH =
 DEPPATH = --dep-path .
 
-include netdev/Make.defs
+include netmgr/Make.defs
 include mac/Make.defs
 include socket/Make.defs
 ifeq ($(CONFIG_BLUETOOTH),y)

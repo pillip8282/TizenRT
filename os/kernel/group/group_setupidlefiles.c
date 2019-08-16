@@ -64,7 +64,6 @@
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/net/net.h>
 
 #include "group/group.h"
 
@@ -111,12 +110,6 @@ int group_setupidlefiles(FAR struct task_tcb_s *tcb)
 	/* Initialize file descriptors for the TCB */
 
 	files_initlist(&group->tg_filelist);
-#endif
-
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-	/* Allocate socket descriptors for the TCB */
-
-	net_initlist(&group->tg_socketlist);
 #endif
 
 	/* Open stdin, dup to get stdout and stderr. This should always

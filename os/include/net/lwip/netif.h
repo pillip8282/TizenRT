@@ -367,30 +367,6 @@ struct netif {
 #endif							/* LWIP_LOOPBACK_MAX_PBUFS */
 #endif							/* ENABLE_LOOPBACK */
 
-	char d_ifname[6];
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-	struct netif *flink;
-#endif
-	struct ether_addr d_mac;	/* Device MAC address */
-
-	u16_t d_len;
-	u32_t d_flags;
-	uint32_t d_ipaddr;		/* Host IPv4 address assigned to the network interface */
-	uint32_t d_draddr;		/* Default router IP address */
-	uint32_t d_netmask;		/* Network subnet mask */
-	/* Driver callbacks */
-	int (*d_ifup) (FAR struct netif * dev);
-	int (*d_ifdown) (FAR struct netif * dev);
-	int (*d_ifstate) (FAR struct netif * dev);
-	int (*d_txavail) (FAR struct netif * dev);
-	int (*d_txpoll) (FAR struct netif * dev);
-	/* Drivers may attached device-specific, private information */
-	void *d_private;
-#ifdef CONFIG_NET_MULTIBUFFER
-	u8_t *d_buf;
-#else
-	u8_t d_buf[MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE];
-#endif
 #if LWIP_DHCPS
 	struct udp_pcb *dhcps_pcb;
 #endif

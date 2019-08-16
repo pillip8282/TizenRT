@@ -64,8 +64,6 @@
 #include <net/if.h>
 #include <net/lwip/netif.h>
 #include <net/lwip/opt.h>
-#include <tinyara/net/net.h>
-#include <tinyara/net/ioctl.h>
 
 #ifdef CONFIG_LWIP_SOCKET_ERROR_REPORT
 #include <error_report/error_report.h>

@@ -60,7 +60,6 @@
 #include <fcntl.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/net/net.h>
 #include <tinyara/lib.h>
 
 #include "group/group.h"

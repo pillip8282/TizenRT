@@ -41,7 +41,6 @@
 #include <netinet/ether.h>
 
 #include <tinyara/clock.h>
-#include <tinyara/net/net.h>
 #include <net/lwip/netif.h>
 //#include <net/lwip/dhcp.h>
 //#include <net/lwip/stats.h>

@@ -60,7 +60,6 @@
 #include <errno.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/net/net.h>
 
 #include "aio/aio.h"
 

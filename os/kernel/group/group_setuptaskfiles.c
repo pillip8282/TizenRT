@@ -60,7 +60,7 @@
 #include <errno.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/net/net.h>
+#include <tinyara/net/net_vfs.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -234,12 +234,6 @@ int group_setuptaskfiles(FAR struct task_tcb_s *tcb)
 	/* Initialize file descriptors for the TCB */
 
 	files_initlist(&group->tg_filelist);
-#endif
-
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-	/* Allocate socket descriptors for the TCB */
-
-	net_initlist(&group->tg_socketlist);
 #endif
 
 	/* Duplicate the parent task's file descriptors */

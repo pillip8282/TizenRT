@@ -68,7 +68,7 @@
 #include <tinyara/init.h>
 #include <tinyara/kthread.h>
 #include <tinyara/userspace.h>
-#include <tinyara/net/net.h>
+#include <tinyara/net/net_vfs.h> // pkbuild net_initialize is needed??
 #ifdef CONFIG_SCHED_WORKQUEUE
 #include <tinyara/wqueue.h>
 #endif

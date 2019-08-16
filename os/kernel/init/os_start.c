@@ -65,7 +65,7 @@
 #include  <tinyara/compiler.h>
 #include  <tinyara/sched.h>
 #include  <tinyara/fs/fs.h>
-#include  <tinyara/net/net.h>
+#include  <tinyara/net/netmgr.h>
 #include  <tinyara/lib.h>
 #include  <tinyara/mm/mm.h>
 #include  <tinyara/mm/shm.h>

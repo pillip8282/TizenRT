@@ -26,7 +26,6 @@
 #include <tinyara/irq.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/clock.h>
-#include <tinyara/net/net.h>
 #include <arpa/inet.h>
 #include <net/lwip/netif/etharp.h>
 #include <net/lwip/ethip6.h>

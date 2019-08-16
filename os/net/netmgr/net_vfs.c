@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,9 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 /****************************************************************************
- * net/socket/net_vfcntl.c
  *
- *   Copyright (C) 2009, 2012-2015 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2007-2012, 2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,33 +49,203 @@
  *
  ****************************************************************************/
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
-
 #include <tinyara/config.h>
-
-#include <sys/socket.h>
-
-#include <stdint.h>
-#include <stdarg.h>
 #include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <errno.h>
 #include <debug.h>
-
-#include <arch/irq.h>
-#include <tinyara/net/net.h>
-#include "socket/socket.h"
-
-#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
+#include <net/if.h>
+#include <tinyara/net/net_vfs.h>
+#include "netstack.h"
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Name: net_checksd
+ *
+ * Description:
+ *   Check if the socket descriptor is valid for the provided TCB and if it
+ *   supports the requested access.  This trivial operation is part of the
+ *   fdopen() operation when the fdopen() is performed on a socket descriptor.
+ *   It simply performs some sanity checking before permitting the socket
+ *   descriptor to be wrapped as a C FILE stream.
+ *
  ****************************************************************************/
+int net_checksd(int sd, int oflags)
+{
+	struct netstack *st = get_netstack();
+	return st->ops->checksd(sd, oflags);
+}
 
 /****************************************************************************
- * Public Functions
+ * Function: net_clone
+ *
+ * Description:
+ *   Performs the low level, common portion of net_dupsd() and net_dupsd2()
+ *
  ****************************************************************************/
+
+int net_clone(FAR struct socket *sock1, FAR struct socket *sock2)
+{
+	struct netstack *st = get_netstack();
+	return st->ops->clone(sock1, sock2);
+}
+
+/****************************************************************************
+ * Function: net_dupsd
+ *
+ * Description:
+ *   Clone a socket descriptor to an arbitray descriptor number.  If file
+ *   descriptors are implemented, then this is called by dup() for the case
+ *   of socket file descriptors.  If file descriptors are not implemented,
+ *   then this function IS dup().
+ *
+ ****************************************************************************/
+int net_dupsd(int sockfd)
+{
+	struct netstack *st = get_netstack();
+	return st->ops->dup(sockfd);
+}
+
+/****************************************************************************
+ * Function: net_dupsd2
+ *
+ * Description:
+ *   Clone a socket descriptor to an arbitray descriptor number.  If file
+ *   descriptors are implemented, then this is called by dup2() for the case
+ *   of socket file descriptors.  If file descriptors are not implemented,
+ *   then this function IS dup2().
+ *
+ ****************************************************************************/
+
+int net_dupsd2(int sockfd1, int sockfd2)
+{
+	struct netstack *st = get_netstack();
+	return st->ops->dup2(sockfd1, sockfd2);
+}
+
+/****************************************************************************
+ * Function: net_close
+ *
+ * Description:
+ *   Performs the close operation on socket descriptors
+ *
+ * Parameters:
+ *   sockfd   Socket descriptor of socket
+ *
+ * Returned Value:
+ *   0 on success; -1 on error with errno set appropriately.
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+
+int net_close(int sockfd)
+{
+	struct netstack *st = get_netstack();
+	return st->ops->close(sockfd);
+}
+
+
+/****************************************************************************
+ * Name: net_ioctl
+ *
+ * Description:
+ *   Perform network device specific operations.
+ *
+ * Parameters:
+ *   sockfd   Socket descriptor of device
+ *   cmd      The ioctl command
+ *   arg      The argument of the ioctl cmd
+ *
+ * Return:
+ *   >=0 on success (positive non-zero values are cmd-specific)
+ *   On a failure, -1 is returned with errno set appropriately
+ *
+ *   EBADF
+ *     'sockfd' is not a valid descriptor.
+ *   EFAULT
+ *     'arg' references an inaccessible memory area.
+ *   ENOTTY
+ *     'cmd' not valid.
+ *   EINVAL
+ *     'arg' is not valid.
+ *   ENOTTY
+ *     'sockfd' is not associated with a network device.
+ *   ENOTTY
+ *      The specified request does not apply to the kind of object that the
+ *      descriptor 'sockfd' references.
+ *
+ ****************************************************************************/
+extern int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfilter *imsf);
+extern int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req);
+extern int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg);
+
+/* This is really kind of bogus.. When asked for an IP address, this is
+ * family that is returned in the ifr structure.  Probably could just skip
+ * this since the address family has nothing to do with the Ethernet address.
+ */
+#ifdef CONFIG_NET_IPv6
+#define AF_INETX AF_INET6
+#else							/* CONFIG_NET_IPv6 */
+#define AF_INETX AF_INET
+#endif							/* CONFIG_NET_IPv6 */
+
+int net_ioctl(int sockfd, int cmd, unsigned long arg)
+{
+	FAR struct socket *sock = NULL;
+	int ret = -ENOTTY;
+
+	/* Check if this is a valid command.  In all cases, arg is a pointer that has
+	 * been cast to unsigned long.  Verify that the value of the to-be-pointer is
+	 * non-NULL.
+	 */
+	if (!((cmd == FIONREAD) || (cmd == FIONBIO) || (_SIOCVALID(cmd)))) {
+		ret = -ENOTTY;
+		goto errout;
+	}
+
+	/* Verify that the sockfd corresponds to valid, allocated socket */
+	sock = get_socket(sockfd);
+	if (NULL == sock) {
+		ret = -EBADF;
+		goto errout;
+	}
+
+	/* Execute the command */
+#ifdef CONFIG_NET_LWIP
+	struct netstack *st = get_netstack();
+	ret = st->ops->d_ioctl(sockfd, cmd, (void *)((uintptr_t)arg));
+#endif
+	if (ret == -ENOTTY) {
+		ret = netdev_ifrioctl(sock, cmd, (FAR struct ifreq *)((uintptr_t)arg));
+	}
+#ifdef CONFIG_NET_NETMON
+	if (ret == -ENOTTY) {
+		ret = netdev_nmioctl(sock, cmd, (void *)((uintptr_t)arg));
+	}
+#endif                          /* CONFIG_NET_NETMON */
+#ifdef CONFIG_NET_IGMP
+	if (ret == -ENOTTY) {
+		ret = netdev_imsfioctl(sock, cmd, (FAR struct ip_msfilter *)((uintptr_t)arg));
+	}
+#endif							/* CONFIG_NET_IGMP */
+#ifdef CONFIG_NET_ROUTE
+	if (ret == -ENOTTY) {
+		ret = netdev_rtioctl(sock, cmd, (FAR struct rtentry *)((uintptr_t)arg));
+	}
+#endif							/* CONFIG_NET_ROUTE */
+
+	/* Check for success or failure */
+	if (ret >= 0) {
+		return ret;
+	}
+
+	/* On failure, set the errno and return -1 */
+errout:
+	errno = -ret;
+	return ERROR;
+}
+
 
 /****************************************************************************
  * Name: net_vfcntl
@@ -115,7 +283,7 @@ int net_vfcntl(int sockfd, int cmd, va_list ap)
 
 	/* Interrupts must be disabled in order to perform operations on socket structures */
 
-	flags = net_lock();
+	// flags = net_lock();
 	switch (cmd) {
 	case F_DUPFD:
 		/* Return a new file descriptor which shall be the lowest numbered
@@ -129,7 +297,8 @@ int net_vfcntl(int sockfd, int cmd, va_list ap)
 		 */
 
 	{
-		ret = net_dupsd(sockfd);
+		struct netstack *st = get_netstack();
+		ret = st->ops->dup(sockfd);
 	}
 	break;
 
@@ -162,7 +331,8 @@ int net_vfcntl(int sockfd, int cmd, va_list ap)
 		 */
 
 	{
-		ret = lwip_fcntl(sockfd, cmd, 0);
+		struct netstack *st = get_netstack();
+		ret = st->ops->fcntl(sockfd, cmd, 0);
 	}
 	break;
 
@@ -177,8 +347,10 @@ int net_vfcntl(int sockfd, int cmd, va_list ap)
 
 	{
 		int mode = va_arg(ap, int);
-		ret = lwip_fcntl(sockfd, cmd, mode);
+		struct netstack *st = get_netstack();
+		ret = st->ops->fcntl(sockfd, cmd, mode);
 	}
+
 	break;
 
 	case F_GETOWN:
@@ -231,7 +403,7 @@ int net_vfcntl(int sockfd, int cmd, va_list ap)
 		break;
 	}
 
-	net_unlock(flags);
+	// net_unlock(flags);
 
 errout:
 	if (err != 0) {
@@ -241,4 +413,46 @@ errout:
 	return ret;
 }
 
-#endif							/* CONFIG_NET && CONFIG_NSOCKET_DESCRIPTORS > 0 */
+
+/****************************************************************************
+ * Name: net_initlist
+ *
+ * Description:
+ *   Initialize a list of sockets for a new task
+ *
+ * Input Parameters:
+ *   list -- A reference to the pre-allocated socket list to be initialized.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void net_initlist(FAR struct socketlist *list)
+{
+	/* ToDo: Initialize the list access mutex */
+	return;
+}
+
+/****************************************************************************
+ * Name: net_releaselist
+ *
+ * Description:
+ *   Release resources held by the socket list
+ *
+ * Input Parameters:
+ *   list -- A reference to the pre-allocated socket list to be un-initialized.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void net_releaselist(FAR struct socketlist *list)
+{
+	/*	Todo */
+	return;
+}
+
+#endif							/* CONFIG_NSOCKET_DESCRIPTORS > 0 */
+

@@ -52,12 +52,12 @@
 ############################################################################
 
 # Support for operations on network devices
-NETDEV_CSRCS += netdev_ioctl.c
-NETDEV_CSRCS += netdev_findbyname.c
-NETDEV_CSRCS += netdev_count.c
-NETDEV_CSRCS += netdev_foreach.c
-NETDEV_CSRCS += netdev_sem.c
-NETDEV_CSRCS += netdev_getstats.c
+
+NETDEV_CSRCS += netmgr_ioctl.c
+
+ifeq ($(CONFIG_NET_LWIP) ,y)
+NETDEV_CSRCS += netmgr_ioctl_lwip.c
+
 ifeq ($(CONFIG_NET_LWIP_DHCP),y)
 ifeq ($(CONFIG_LWIP_DHCPC),y)
 NETDEV_CSRCS += netdev_dhcpc.c
@@ -65,8 +65,28 @@ endif
 ifeq ($(CONFIG_LWIP_DHCPS),y)
 NETDEV_CSRCS += netdev_dhcpd.c
 endif
+endif #CONFIG_NET_LWIP
+
 endif
 
+ifeq ($(CONFIG_NET_NETMON) ,y)
+NETDEV_CSRCS += netmgr_ioctl_netmon.c
+endif
+
+ifeq ($(CONFIG_NET_IGMP) ,y)
+NETDEV_CSRCS += netmgr_ioctl_igmp.c
+endif
+
+ifeq ($(CONFIG_NET_ROUTE) ,y)
+NETDEV_CSRCS += netmgr_ioctl_route.c
+endif
+
+NETDEV_CSRCS += netdev_findbyname.c
+NETDEV_CSRCS += netdev_count.c
+NETDEV_CSRCS += netdev_foreach.c
+NETDEV_CSRCS += netdev_sem.c
+NETDEV_CSRCS += netdev_getstats.c
+
 # Include netdev build support
-DEPPATH += --dep-path netdev
-VPATH += :netdev
+DEPPATH += --dep-path netmgr
+VPATH += :netmgr

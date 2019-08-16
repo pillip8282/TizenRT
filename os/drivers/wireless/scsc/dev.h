@@ -24,12 +24,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <pthread.h>
-#include <tinyara/net/net.h>
-#include <tinyara/net/netdev.h>
 #include <tinyara/kmalloc.h>
 #include <scsc/scsc_mx.h>
 #include <tinyara/wdog.h>
-#include <net/lwip/netif.h>
 
 #include "max_buf.h"
 #include "fapi.h"

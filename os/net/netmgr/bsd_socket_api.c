@@ -61,167 +61,163 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
-#include <net/lwip/netdb.h>
-#include <net/lwip/sockets.h>
-#ifdef CONFIG_NET_IPv4
-#include <net/lwip/ip4_addr.h>
-#endif
-#ifdef CONFIG_NET_IPv6
-#include <net/lwip/ip6_addr.h>
-#endif
 
 int bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
-	return lwip_bind(s, name, namelen);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	return s_ops->bind(s, name, namelen);
 }
 
 int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
-	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
-	int result = lwip_accept(s, addr, addrlen);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	int res = s_ops->accept(s, addr, addrlen);
 	leave_cancellation_point();
-	return result;
+	return res;
 }
 
 int shutdown(int s, int how)
 {
-	return lwip_shutdown(s, how);
-}
-
-int closesocket(int s)
-{
-	/* Treat as a cancellation point */
-	(void)enter_cancellation_point();
-	int result = lwip_close(s);
-	leave_cancellation_point();
-	return result;
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	return s_ops->shutdown(s, how);
 }
 
 int connect(int s, const struct sockaddr *name, socklen_t namelen)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
-	int result = lwip_connect(s, name, namelen);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	int res = s_ops->connect(s, name, namelen);
 	leave_cancellation_point();
-	return result;
+	return res;
 }
 
 int getsockname(int s, struct sockaddr *name, socklen_t *namelen)
 {
-	return lwip_getsockname(s, name, namelen);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	return s_ops->getsockname(s, name, namelen);
 }
 
 int getpeername(int s, struct sockaddr *name, socklen_t *namelen)
 {
-	return lwip_getpeername(s, name, namelen);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	return s_ops->getpeername(s, name, namelen);
 }
 
 int setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen)
 {
-	return lwip_setsockopt(s, level, optname, optval, optlen);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	return s_ops->setsockopt(s, level, optname, optval, optlen);
 }
 
 int getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen)
 {
-	return lwip_getsockopt(s, level, optname, optval, optlen);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	return s_ops->getsockopt(s, level, optname, optval, optlen);
 }
 
 int listen(int s, int backlog)
 {
-	return lwip_listen(s, backlog);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	return s_ops->listen(s, backlog);
 }
 
 ssize_t recv(int s, void *mem, size_t len, int flags)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
-	int result = lwip_recv(s, mem, len, flags);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	int res = s_ops->recv(s, mem, len, flags);
 	leave_cancellation_point();
-	return result;
+	return res;
 }
 
 ssize_t recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
-	int result = lwip_recvfrom(s, mem, len, flags, from, fromlen);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	int res = s_ops->recvfrom(s, mem, len, flags, from, fromlen);
 	leave_cancellation_point();
-	return result;
+	return res;
+}
+
+/****************************************************************************
+ * Function: recvmsg
+ *
+ * Description:
+ *   The recvmsg() call is identical to recvfrom() with a NULL from parameter.
+ *
+ * Parameters:
+ *   sockfd   Socket descriptor of socket
+ *   buf      Buffer to receive data
+ *   len      Length of buffer
+ *   flags    Receive flags
+ *
+ * Returned Value:
+ *  (see recvfrom)
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
+{
+	// ToDo: It only supports limited features of sendmsg
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	return s_ops->recvmsg(sockfd, msg, flags);
 }
 
 ssize_t send(int s, const void *data, size_t size, int flags)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
-	int result = lwip_send(s, data, size, flags);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	int res = s_ops->send(s, data, size, flags);
 	leave_cancellation_point();
-	return result;
+	return res;
 }
 
 ssize_t sendto(int s, const void *data, size_t size, int flags, const struct sockaddr *to, socklen_t tolen)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
-	int result = lwip_sendto(s, data, size, flags, to, tolen);
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	int res = s_ops->sendto(s, data, size, flags, to, tolen);
 	leave_cancellation_point();
-	return result;
+	return res;
 }
 
-static int socket_argument_validation(int domain, int type, int protocol)
+/****************************************************************************
+ * Function: sendmsg
+ *
+ * Description:
+ *   The sendmsg() call is identical to sendto() with a NULL from parameter.
+  *
+ * Parameters:
+ *   sockfd   Socket descriptor of socket
+ *   buf      Buffer to send data
+ *   len      Length of buffer
+ *   flags    Receive flags
+ *
+ * Returned Value:
+ *  (see sendto)
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags)
 {
-	if (domain != AF_INET && domain != AF_INET6 && domain != AF_UNSPEC) {
-		return -1;
-	}
-	switch (protocol) {
-	case IPPROTO_UDP:
-	case IPPROTO_UDPLITE:
-		if (type != SOCK_DGRAM && type != SOCK_RAW) {
-			return -1;
-		}
-		break;
-	case IPPROTO_TCP:
-		if (type != SOCK_STREAM) {
-			return -1;
-		}
-		break;
-	case IPPROTO_ICMP:
-	case IPPROTO_IGMP:
-	case IPPROTO_ICMPV6:
-		if (type != SOCK_RAW) {
-			return -1;
-		}
-		break;
-	case IPPROTO_IP:
-		if (type == SOCK_RAW) {
-			return -1;
-		}
-		break;
-	default:
-		return -1;
-		break;
-	}
-	return 0;
+	// ToDo: It only supports limited features of sendmsg
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	int res = s_ops->sendmsg(sockfd, msg, flags);
+
 }
+
 
 int socket(int domain, int type, int protocol)
 {
-	if (!socket_argument_validation(domain, type, protocol)) {
-		return lwip_socket(domain, type, protocol);
-	}
-
-	return -1;
+	struct netmgr_stack_ops *s_ops = get_netstack();
+	return s_ops->socket(domain, type, protocol);
 }
-
-#ifdef CONFIG_DISABLE_POLL
-int select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset, struct timeval *timeout)
-{
-	/* Treat as a cancellation point */
-	(void)enter_cancellation_point();
-	int result = lwip_select(maxfdp1, readset, writeset, exceptset, timeout);
-	leave_cancellation_point();
-	return result;
-}
-#endif
-
 #endif
