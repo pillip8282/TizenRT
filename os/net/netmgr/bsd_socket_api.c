@@ -61,74 +61,92 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <tinyara/lwnl/lwnl80211.h>
+#include "netstack.h"
+
+/*  Private */
+int _create_netlink(int type, int protocol)
+{
+	// to do message filter
+	(void)type;
+	(void)protocol;
+
+	int fd = open(LWNL80211_PATH, O_RDWR);
+	if (fd < 0) {
+		ndbg("open netlink dev fail\n");
+		return -1;
+	}
+	return fd;
+}
+
 
 int bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	return s_ops->bind(s, name, namelen);
+	struct netstack *stk = get_netstack();
+	return stk->ops->bind(s, name, namelen);
 }
 
 int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
 	(void)enter_cancellation_point();
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	int res = s_ops->accept(s, addr, addrlen);
+	struct netstack *stk = get_netstack();
+	int res = stk->ops->accept(s, addr, addrlen);
 	leave_cancellation_point();
 	return res;
 }
 
 int shutdown(int s, int how)
 {
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	return s_ops->shutdown(s, how);
+	struct netstack *stk = get_netstack();
+	return stk->ops->shutdown(s, how);
 }
 
 int connect(int s, const struct sockaddr *name, socklen_t namelen)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	int res = s_ops->connect(s, name, namelen);
+	struct netstack *stk = get_netstack();
+	int res = stk->ops->connect(s, name, namelen);
 	leave_cancellation_point();
 	return res;
 }
 
 int getsockname(int s, struct sockaddr *name, socklen_t *namelen)
 {
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	return s_ops->getsockname(s, name, namelen);
+	struct netstack *stk = get_netstack();
+	return stk->ops->getsockname(s, name, namelen);
 }
 
 int getpeername(int s, struct sockaddr *name, socklen_t *namelen)
 {
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	return s_ops->getpeername(s, name, namelen);
+	struct netstack *stk = get_netstack();
+	return stk->ops->getpeername(s, name, namelen);
 }
 
 int setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen)
 {
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	return s_ops->setsockopt(s, level, optname, optval, optlen);
+	struct netstack *stk = get_netstack();
+	return stk->ops->setsockopt(s, level, optname, optval, optlen);
 }
 
 int getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen)
 {
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	return s_ops->getsockopt(s, level, optname, optval, optlen);
+	struct netstack *stk = get_netstack();
+	return stk->ops->getsockopt(s, level, optname, optval, optlen);
 }
 
 int listen(int s, int backlog)
 {
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	return s_ops->listen(s, backlog);
+	struct netstack *stk = get_netstack();
+	return stk->ops->listen(s, backlog);
 }
 
 ssize_t recv(int s, void *mem, size_t len, int flags)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	int res = s_ops->recv(s, mem, len, flags);
+	struct netstack *stk = get_netstack();
+	int res = stk->ops->recv(s, mem, len, flags);
 	leave_cancellation_point();
 	return res;
 }
@@ -137,8 +155,8 @@ ssize_t recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from,
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	int res = s_ops->recvfrom(s, mem, len, flags, from, fromlen);
+	struct netstack *stk = get_netstack();
+	int res = stk->ops->recvfrom(s, mem, len, flags, from, fromlen);
 	leave_cancellation_point();
 	return res;
 }
@@ -164,16 +182,16 @@ ssize_t recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from,
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 {
 	// ToDo: It only supports limited features of sendmsg
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	return s_ops->recvmsg(sockfd, msg, flags);
+	struct netstack *stk = get_netstack();
+	return stk->ops->recvmsg(sockfd, msg, flags);
 }
 
 ssize_t send(int s, const void *data, size_t size, int flags)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	int res = s_ops->send(s, data, size, flags);
+	struct netstack *stk = get_netstack();
+	int res = stk->ops->send(s, data, size, flags);
 	leave_cancellation_point();
 	return res;
 }
@@ -182,8 +200,8 @@ ssize_t sendto(int s, const void *data, size_t size, int flags, const struct soc
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	int res = s_ops->sendto(s, data, size, flags, to, tolen);
+	struct netstack *stk = get_netstack();
+	int res = stk->ops->sendto(s, data, size, flags, to, tolen);
 	leave_cancellation_point();
 	return res;
 }
@@ -209,15 +227,18 @@ ssize_t sendto(int s, const void *data, size_t size, int flags, const struct soc
 ssize_t sendmsg(int sockfd, struct msghdr *msg, int flags)
 {
 	// ToDo: It only supports limited features of sendmsg
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	int res = s_ops->sendmsg(sockfd, msg, flags);
-
+	struct netstack *stk = get_netstack();
+	return stk->ops->sendmsg(sockfd, msg, flags);
 }
 
 
 int socket(int domain, int type, int protocol)
 {
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	return s_ops->socket(domain, type, protocol);
+	if (domain == AF_LWNL) {
+		int fd = _create_netlink(type, protocol);
+		return fd;
+	}
+	struct netstack *stk = get_netstack();
+	return stk->ops->socket(domain, type, protocol);
 }
-#endif
+#endif // CONFIG_NET

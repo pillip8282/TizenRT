@@ -1,13 +1,58 @@
 #include <tinyara/config.h>
+#include <sys/ioctl.h>
 #include "netdev_mgr_internal.h"
 
-static FAR struct net_driver_s *_netdev_ifrdev(FAR struct ifreq *req)
+struct ifenum {
+	FAR struct ifconf	*ifc;
+	unsigned int		pos;
+};
+
+static FAR struct netdev *_netdev_ifrdev(FAR struct ifreq *req)
 {
 	if (req != NULL) {
-		return get_netdev(req->ifr_name);
+		return nm_get_netdev(req->ifr_name);
 	}
 	return NULL;
 }
+
+
+static int _netdev_getconf(struct netdev *dev, void *arg)
+{
+	FAR struct ifenum *ifenum = (FAR struct ifenum *)arg;
+	FAR struct ifconf *ifc = ifenum->ifc;
+	FAR struct ifreq  *ifr = (FAR struct ifreq *)(ifc->ifc_buf + ifenum->pos);
+
+	if (ifenum->pos + sizeof(struct ifreq) > ifc->ifc_len) {
+		return -EFAULT;
+	}
+
+	strncpy(ifr->ifr_name, dev->ifname, IFNAMSIZ - 1);
+	ND_NETOPS(dev, get_ip4addr)(dev, &ifr->ifr_addr, NETDEV_IP);
+
+	//struct sockaddr_in *sin = (struct sockaddr_in *)&ifr->ifr_addr;
+	//sin->sin_addr.s_addr = ip4_addr_get_u32(ip_2_ip4(&dev->ip_addr));
+	ifenum->pos += sizeof(struct ifreq);
+
+	return 0;
+}
+
+
+static int ioctl_siocgifconf(FAR struct ifconf *ifc)
+{
+	int ret;
+	struct ifenum ife = {
+		.ifc = ifc,
+		.pos = 0,
+	};
+
+	ret = nm_foreach(_netdev_getconf, (void *)&ife);
+	if (ret == OK) {
+		ifc->ifc_len = ife.pos;
+	}
+
+	return ret;
+}
+
 
 /****************************************************************************
  * Name: netdev_ifrioctl
@@ -43,7 +88,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->get_ip4addr(dev, &req->ifr_addr, NETDEV_IP);
+		ret = ((struct netdev_ops *)(dev->ops))->get_ip4addr(dev, &req->ifr_addr, NETDEV_IP);
 	}
 		break;
 	case SIOCSIFADDR: {			/* Set IP address */
@@ -51,7 +96,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->set_ip4addr(dev, &req->ifr_addr, NETDEV_IP);
+		ret = ((struct netdev_ops *)(dev->ops))->set_ip4addr(dev, &req->ifr_addr, NETDEV_IP);
 	}
 		break;
 
@@ -60,7 +105,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->get_ip4addr(dev, &req->ifr_addr, NETDEV_GW);
+		ret = ((struct netdev_ops *)(dev->ops))->get_ip4addr(dev, &req->ifr_addr, NETDEV_GW);
 	}
 		break;
 
@@ -69,7 +114,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->set_ip4addr(dev, &req->ifr_addr, NETDEV_GW);
+		ret = ((struct netdev_ops *)(dev->ops))->set_ip4addr(dev, &req->ifr_addr, NETDEV_GW);
 	}
 		break;
 
@@ -84,7 +129,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->get_ip4addr(dev, &req->ifr_addr, NETDEV_NETMASK);
+		ret = ((struct netdev_ops *)(dev->ops))->get_ip4addr(dev, &req->ifr_addr, NETDEV_NETMASK);
 	}
 		break;
 
@@ -93,17 +138,18 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->set_ip4addr(dev, &req->ifr_addr, NETDEV_NETMASK);
+		ret = ((struct netdev_ops *)(dev->ops))->set_ip4addr(dev, &req->ifr_addr, NETDEV_NETMASK);
 	}
 		break;
 
 		/* TODO: Support IPv6 related IOCTL calls once IPv6 is functional */
+#ifdef CONFIG_NET_IPv6
 	case SIOCGLIFADDR: {		/* Get IP address */
 		dev = _netdev_ifrdev(req);
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->get_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_IP);
+		ret = ((struct netdev_ops *)(dev->ops))->get_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_IP);
 	}
 		break;
 
@@ -112,7 +158,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->set_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_IP);
+		ret = ((struct netdev_ops *)(dev->ops))->set_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_IP);
 	}
 		break;
 
@@ -121,7 +167,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->get_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_GW);
+		ret = ((struct netdev_ops *)(dev->ops))->get_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_GW);
 	}
 		break;
 
@@ -130,22 +176,15 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->set_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_GW);
+		ret = ((struct netdev_ops *)(dev->ops))->set_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_GW);
 	}
 		break;
-
-	case SIOCGLIFBRDADDR:		/* Get broadcast IP address */
-	case SIOCSLIFBRDADDR: {		/* Set broadcast IP address */
-		ret = -ENOSYS;
-	}
-		break;
-
 	case SIOCGLIFNETMASK: {		/* Get network mask */
 		dev = _netdev_ifrdev(req);
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->get_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_IP);
+		ret = ((struct netdev_ops *)(dev->ops))->get_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_IP);
 	}
 		break;
 
@@ -154,7 +193,13 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->set_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_NETMASK);
+		ret = ((struct netdev_ops *)(dev->ops))->set_ip6addr(dev, &(((struct lifreq *)req)->lifr_addr), NETDEV_NETMASK);
+	}
+		break;
+#endif
+	case SIOCGLIFBRDADDR:		/* Get broadcast IP address */
+	case SIOCSLIFBRDADDR: {		/* Set broadcast IP address */
+		ret = -ENOSYS;
 	}
 		break;
 	case SIOCGLIFMTU:			/* Get MTU size */
@@ -163,7 +208,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->get_mtu(dev, &req->ifr_mtu);
+		ret = ((struct netdev_ops *)(dev->ops))->get_mtu(dev, &req->ifr_mtu);
 	}
 		break;
 
@@ -174,9 +219,9 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 			break;
 		}
 		if (req->ifr_flags & IFF_UP) {
-			ret = dev->ops->ifup(dev);
+			ret = nm_ifup(dev);
 		} else if (req->ifr_flags & IFF_DOWN) {
-			ret = dev->ops->ifdown(dev);
+			ret = nm_ifdown(dev);
 		}
 		ret = OK;
 	}
@@ -187,7 +232,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->get_flag(dev, &req->ifr_flags);
+		ret = ((struct netdev_ops *)(dev->ops))->get_flag(dev, &req->ifr_flags);
 	}
 		break;
 
@@ -197,7 +242,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->get_hwaddr(dev, req->ifr_hwaddr.sa_data);
+		ret = ((struct netdev_ops *)(dev->ops))->get_hwaddr(dev, &req->ifr_hwaddr);
 	}
 		break;
 
@@ -206,7 +251,7 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->set_hwaddr(dev, req->ifr_hwaddr.sa_data);
+		ret = ((struct netdev_ops *)(dev->ops))->set_hwaddr(dev, &req->ifr_hwaddr);
 	}
 		break;
 
@@ -215,12 +260,12 @@ int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req)
 		if (!dev) {
 			break;
 		}
-		ret = dev->ops->delete_ipaddr(dev);
+		ret = ((struct netdev_ops *)(dev->ops))->delete_ipaddr(dev);
 	}
 		break;
 
 	case SIOCGIFCOUNT: {		/* Get number of devices */
-		req->ifr_count = netmgr_count();
+		req->ifr_count = nm_count();
 		ret = OK;
 	}
 		break;

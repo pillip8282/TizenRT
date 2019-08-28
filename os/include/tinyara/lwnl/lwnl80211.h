@@ -18,9 +18,7 @@
 #ifndef __INCLUDE_TINYARA_LWNL80211_H__
 #define __INCLUDE_TINYARA_LWNL80211_H__
 
-#include <tinyara/config.h>
-#include <tinyara/fs/ioctl.h>
-
+#include <sys/ioctl.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <mqueue.h>
@@ -49,6 +47,12 @@
 	do {                                                                         \
 		nldbg(LWNL80211_TAG"<---%s:%d\n", __FILE__, __LINE__);                   \
 	} while (0)
+
+/* Light-weight netlink domain definition */
+#define AF_LWNL 1
+
+/*  Event type */
+#define LWNL_ROUTE 1
 
 #define LWNL80211_MQUEUE_PRIORITY        100
 #define LWNL80211_MQUEUE_MAX_DATA_LEN    1024
@@ -150,10 +154,12 @@ typedef enum {
 	LWNL80211_SOFTAP_MODE,			/**<  soft ap mode          */
 } lwnl80211_status_e;
 
+#define LWNL_NI_NAME_SIZE 7
 typedef struct {
 	void *data;
 	uint32_t data_len;
 	lwnl80211_result_e res;
+	uint8_t name[LWNL_NI_NAME_SIZE];
 } lwnl80211_data;
 
 typedef struct {
@@ -211,51 +217,48 @@ typedef struct {
 	bool md;
 } lwnl80211_cb_data;
 
-struct lwnl80211_lowerhalf_s;
+
+struct netdev;
+struct lwnl80211_ops {
+	/*  block call */
+	CODE lwnl80211_result_e (*init)(struct netdev *dev);
+	/*  block call */
+	CODE lwnl80211_result_e (*deinit)(struct netdev *dev);
+	/*  non-block */
+	CODE lwnl80211_result_e (*scan_ap)(struct netdev *dev, void *arg);
+	/*  non-block */
+	CODE lwnl80211_result_e (*connect_ap)(struct netdev *dev, lwnl80211_ap_config_s *config, void *arg);
+	/*  non-block */
+	CODE lwnl80211_result_e (*disconnect_ap)(struct netdev *dev, void *arg);
+	/*  block */
+	CODE lwnl80211_result_e (*get_info)(struct netdev *dev, lwnl80211_info *info);
+	/*  block */
+	CODE lwnl80211_result_e (*start_sta)(struct netdev *dev);
+	/*  block */
+	CODE lwnl80211_result_e (*start_softap)(struct netdev *dev, lwnl80211_softap_config_s *config);
+	/*  block */
+	CODE lwnl80211_result_e (*stop_softap)(struct netdev *dev);
+	/*  block */
+	CODE lwnl80211_result_e (*set_autoconnect)(struct netdev *dev, uint8_t chk);
+	/*  block */
+	CODE lwnl80211_result_e (*drv_ioctl)(struct netdev *dev, int cmd, unsigned long arg);
+};
+
+
 struct lwnl80211_upperhalf_s;
-
-struct lwnl80211_ops_s {
-	CODE lwnl80211_result_e (*init)(struct lwnl80211_lowerhalf_s *dev);
-	CODE lwnl80211_result_e (*deinit)(void);
-	CODE lwnl80211_result_e (*scan_ap)(void *arg);
-	CODE lwnl80211_result_e (*connect_ap)(lwnl80211_ap_config_s *config, void *arg);
-	CODE lwnl80211_result_e (*disconnect_ap)(void *arg);
-	CODE lwnl80211_result_e (*get_info)(lwnl80211_info *info);
-	CODE lwnl80211_result_e (*start_sta)(void);
-	CODE lwnl80211_result_e (*start_softap)(lwnl80211_softap_config_s *config);
-	CODE lwnl80211_result_e (*stop_softap)(void);
-	CODE lwnl80211_result_e (*set_autoconnect)(uint8_t chk);
-	CODE lwnl80211_result_e (*drv_ioctl)(int cmd, unsigned long arg);
-};
-
-/* Callback */
-typedef CODE void (*lwnl80211_callback_t)(struct lwnl80211_lowerhalf_s *dev, lwnl80211_cb_status status, void *buffer);
-
-typedef struct lwnl80211_lowerhalf_s {
-	struct lwnl80211_ops_s *ops;
+struct lwnl80211_lowerhalf_s {
 	struct lwnl80211_upperhalf_s *parent;
-	lwnl80211_callback_t cbk;
 };
-
-/* Driver OPSs */
-lwnl80211_result_e lwnl80211_init(struct lwnl80211_lowerhalf_s *dev);
-lwnl80211_result_e lwnl80211_deinit(void);
-lwnl80211_result_e lwnl80211_scan_ap(void *arg);
-lwnl80211_result_e lwnl80211_connect_ap(lwnl80211_ap_config_s *ap_connect_config, void *arg);
-lwnl80211_result_e lwnl80211_disconnect_ap(void *arg);
-lwnl80211_result_e lwnl80211_get_info(lwnl80211_info *wifi_info);
-lwnl80211_result_e lwnl80211_start_softap(lwnl80211_softap_config_s *softap_config);
-lwnl80211_result_e lwnl80211_start_sta(void);
-lwnl80211_result_e lwnl80211_stop_softap(void);
-lwnl80211_result_e lwnl80211_set_autoconnect(uint8_t check);
-lwnl80211_result_e lwnl80211_drv_ioctl(int cmd, unsigned long arg);
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /* Registrations */
-int lwnl80211_register(struct lwnl80211_lowerhalf_s *dev);
-int lwnl80211_unregister(struct lwnl80211_lowerhalf_s *dev);
+int lwnl80211_register(struct lwnl80211_lowerhalf_s *lower);
+// There is no use case to remove the lwnl80211 device.
+//int lwnl80211_unregister(void *dev);
+
+int lwnl80211_postmsg(lwnl80211_cb_status status, void *buffer);
 
 #endif /* __INCLUDE_TINYARA_LWNL80211_H__ */

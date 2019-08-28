@@ -58,7 +58,6 @@
 #endif
 
 #include <net/lwip/arch/cc.h>
-
 #ifndef BYTE_ORDER
 #define BYTE_ORDER LITTLE_ENDIAN
 #endif

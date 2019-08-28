@@ -755,11 +755,11 @@ wifi_manager_result_e _get_ipaddr_dhcpc(void)
 	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
 	int ret;
 	struct in_addr ip_check;
-
+	printf("[pkbuild] interface name(%s) (%s)\n", WIFIMGR_STA_IFNAME, CONFIG_WIFIMGR_STA_IFNAME);
 	ret = dhcp_client_start(WIFIMGR_STA_IFNAME);
 	if (ret != OK) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
-		ndbg("[WM] get IP address fail\n");
+		ndbg("[WM] start dhcpc fail\n");
 		return wret;
 	}
 

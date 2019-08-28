@@ -1,6 +1,32 @@
+/****************************************************************************
+ *
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+
 #include <tinyara/config.h>
 #include <tinyara/net/netmgr.h>
+#include <tinyara/kmalloc.h>
+#include <tinyara/lwnl/lwnl80211.h>
+#include "netstack.h"
 
+struct tr_netmgr {
+	void *dev;
+};
+
+static struct tr_netmgr g_netmgr;
 /****************************************************************************
  * Name: netmgr_setup
  *
@@ -24,26 +50,25 @@
  *
  ****************************************************************************/
 
-void netmgr_setup(void)
+void netmgr_setup(void *arg)
 {
-	/* Initialize the locking facility */
+	(void)arg;
 
-	net_lockinitialize();
+	// todo
+	if (!g_netmgr.dev) {
+		g_netmgr.dev = (void *)kmm_zalloc(sizeof(struct lwnl80211_lowerhalf_s));
+		if (!g_netmgr.dev) {
+			ndbg("alloc dev fail\n");
+		}
+	}
 
-#ifdef CONFIG_NET_ROUTE
-	/* Initialize the routing table */
+	struct netstack *stk = get_netstack();
+	int res = stk->ops->init(NULL);
+	if (res < 0) {
+		ndbg("initialize stack fail\n");
+	}
 
-	net_initroute();
-#endif
-
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-	/* Initialize the socket layer */
-
-	netdev_seminit();
-#endif
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	int res = s_ops->init(NULL);
-	
+	netdev_mgr_start();
 }
 
 /****************************************************************************
@@ -63,10 +88,22 @@ void netmgr_setup(void)
  *
  ****************************************************************************/
 
-void netmgr_start(void)
+void netmgr_start(void *arg)
 {
-	struct netmgr_stack_ops *s_ops = get_netstack();
-	int res = s_ops->start(NULL);
-	
+	(void)arg;
+
+	int res = lwnl80211_register((struct lwnl80211_lowerhalf_s *)g_netmgr.dev);
+	if (res < 0) {
+		ndbg("register device fail\n");
+	}
+
+	/*  start network stack */
+	struct netstack *stk = get_netstack();
+	res = stk->ops->start(NULL);
+	if (res < 0) {
+		ndbg("start stack fail\n");
+	}
+
+
 	return;
 }

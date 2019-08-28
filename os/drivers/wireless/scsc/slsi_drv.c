@@ -38,8 +38,6 @@
 #include <tinyara/fs/fs.h>
 #include <tinyara/sched.h>
 #include <tinyara/lwnl/lwnl80211.h>
-#include <tinyara/lwnl/slsi_drv.h>
-
 #include <slsi_wifi/slsi_wifi_api.h>
 
 #define DHCP_RETRY_COUNT           1
@@ -52,23 +50,22 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-static struct lwnl80211_lowerhalf_s *g_dev;
+#define SLSIDRV_TAG "[SLSIDRV]"
+
+#define SLSIDRV_ERR                                                         \
+	do {                                                                    \
+		vddbg(SLSIDRV_TAG"[ERR] %s: %d line err(%s)\n",                     \
+				  __FILE__, __LINE__, strerror(errno));                     \
+	} while (0)
+
+#define SLSIDRV_ENTER                                                       \
+	do {                                                                    \
+		vddbg(SLSIDRV_TAG"%s:%d\n", __FILE__, __LINE__);                    \
+	} while (0)
+
 
 static WiFi_InterFace_ID_t g_mode;
 
-static struct lwnl80211_ops_s g_lwnl80211_drv_ops = {
-	slsidrv_init,                   /* init */
-	slsidrv_deinit,                 /* deinit */
-	slsidrv_scan_ap,                /* scan_ap */
-	slsidrv_connect_ap,             /* connect_ap */
-	slsidrv_disconnect_ap,          /* disconnect_ap */
-	slsidrv_get_info,               /* get_info */
-	slsidrv_start_sta,              /* start_sta */
-	slsidrv_start_softap,           /* start_softap */
-	slsidrv_stop_softap,            /* stop_softap */
-	slsidrv_set_autoconnect,        /* set_autoconnect */
-	NULL                              /* drv_ioctl */
-};
 
 /*
  * DRIVER SPECIFIC
@@ -203,45 +200,26 @@ fetch_scan_results(lwnl80211_scan_list_s **scan_list, slsi_scan_info_t **slsi_sc
 static int slsi_drv_callback_handler(void *arg)
 {
 	int *type = (int*)(arg);
-	lwnl80211_cb_status status;
-
-	if (!g_dev) {
-		vddbg("Failed to find upper driver\n");
-		free(type);
-		return -1;
-	}
-
-	if (!g_dev->cbk) {
-		vddbg("Failed to find callback function\n");
-		free(type);
-		return -1;
-	}
 
 	vddbg("Got callback from SLSI drv (%d)\n", status);
 	switch (*type) {
 	case 1:
-		status = LWNL80211_STA_CONNECTED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_STA_CONNECTED, NULL);
 		break;
 	case 2:
-		status = LWNL80211_STA_CONNECT_FAILED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_STA_CONNECT_FAILED, NULL);
 		break;
 	case 3:
-		status = LWNL80211_SOFTAP_STA_JOINED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_SOFTAP_STA_JOINED, NULL);
 		break;
 	case 4:
-		status = LWNL80211_STA_DISCONNECTED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_STA_DISCONNECTED, NULL);
 		break;
 	case 5:
-		status = LWNL80211_SOFTAP_STA_LEFT;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_SOFTAP_STA_LEFT, NULL);
 		break;
 	default:
-		status = LWNL80211_UNKNOWN;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_UNKNOWN, NULL);
 		break;
 	}
 
@@ -267,15 +245,11 @@ static void linkup_handler(slsi_reason_t *reason)
 	} else if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
 		*type = 3;
 	}
-	pthread_t tid;
-	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)slsi_drv_callback_handler, (void *)type);
+	int ret = slsi_drv_callback_handler((void *)type);
 	if (ret != 0) {
-		vddbg("pthread create fail(%d)\n", errno);
-		free(type);
-		return;
+		vddbg("callback fail(%d)\n", errno);
 	}
-	pthread_setname_np(tid, "lwnl80211_cbk_handler");
-	pthread_detach(tid);
+	free(type);
 }
 
 static void linkdown_handler(slsi_reason_t *reason)
@@ -291,34 +265,26 @@ static void linkdown_handler(slsi_reason_t *reason)
 	} else if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
 		*type = 5;
 	}
-	pthread_t tid;
-	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)slsi_drv_callback_handler, (void *)type);
+	int ret = slsi_drv_callback_handler((void *)type);
 	if (ret != 0) {
-		vddbg("pthread create fail(%d)\n", errno);
-		free(type);
-		return;
+		vddbg("callback fail(%d)\n", errno);
 	}
-	pthread_setname_np(tid, "lwnl80211_cbk_handler");
-	pthread_detach(tid);
+	free(type);
 }
 
 
 static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 {
 	lwnl80211_scan_list_s *scan_list = NULL;
-	lwnl80211_cb_status status;
-	if (!g_dev) {
-		vddbg("Failed to find upper driver\n");
-		return -1;
-	}
+
 	vddbg("Got scan callback from SLSI drv (%d)\n", status);
 
 	if (reason->reason_code != SLSI_STATUS_SUCCESS) {
 		vddbg("Scan failed %d\n");
-		status = LWNL80211_SCAN_FAILED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_SCAN_FAILED, NULL);
 		return SLSI_STATUS_ERROR;
 	}
+
 	slsi_scan_info_t *wifi_scan_result;
 	int8_t res = WiFiGetScanResults(&wifi_scan_result);
 	if (res != SLSI_STATUS_SUCCESS) {
@@ -326,11 +292,9 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 	}
 
 	if (fetch_scan_results(&scan_list, &wifi_scan_result) == LWNL80211_SUCCESS) {
-		status = LWNL80211_SCAN_DONE;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, (void *)scan_list);
+		lwnl80211_postmsg(LWNL80211_SCAN_DONE, (void *)scan_list);
 	} else {
-		status = LWNL80211_SCAN_FAILED;
-		g_dev->cbk((struct lwnl80211_lowerhalf_s *)g_dev, status, NULL);
+		lwnl80211_postmsg(LWNL80211_SCAN_FAILED, NULL);
 	}
 
 	WiFiFreeScanResults(&wifi_scan_result);
@@ -341,8 +305,9 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 /*
  * Interface API
 */
-lwnl80211_result_e slsidrv_init(struct lwnl80211_lowerhalf_s *dev)
+lwnl80211_result_e slsidrv_init(struct netdev *dev)
 {
+	(void)dev;
 	SLSIDRV_ENTER;
 	lwnl80211_result_e result = LWNL80211_FAIL;
 	if (g_mode == SLSI_WIFI_NONE) {
@@ -367,7 +332,6 @@ lwnl80211_result_e slsidrv_init(struct lwnl80211_lowerhalf_s *dev)
 			vddbg("[ERR] Register Scan Callback(%d)\n", ret);
 			return result;
 		}
-		g_dev = dev;
 		result = LWNL80211_SUCCESS;
 	} else {
 		vddbg("Already %d\n", g_mode);
@@ -375,23 +339,24 @@ lwnl80211_result_e slsidrv_init(struct lwnl80211_lowerhalf_s *dev)
 	return result;
 }
 
-lwnl80211_result_e slsidrv_deinit(void)
+lwnl80211_result_e slsidrv_deinit(struct netdev *dev)
 {
+	(void)dev;
 	SLSIDRV_ENTER;
 	lwnl80211_result_e result = LWNL80211_FAIL;
 	int ret = WiFiStop();
 	if (ret == SLSI_STATUS_SUCCESS) {
 		g_mode = SLSI_WIFI_NONE;
 		result = LWNL80211_SUCCESS;
-		g_dev = NULL;
 	} else {
 		vddbg("Failed to stop STA mode\n");
 	}
 	return result;
 }
 
-lwnl80211_result_e slsidrv_scan_ap(void *arg)
+lwnl80211_result_e slsidrv_scan_ap(struct netdev *dev, void *arg)
 {
+	(void)dev;
 	SLSIDRV_ENTER;
 	lwnl80211_result_e result = LWNL80211_FAIL;
 	int8_t ret = WiFiRegisterScanCallback(&slsi_drv_scan_callback_handler);
@@ -409,8 +374,9 @@ lwnl80211_result_e slsidrv_scan_ap(void *arg)
 	return result;
 }
 
-lwnl80211_result_e slsidrv_connect_ap(lwnl80211_ap_config_s *ap_connect_config, void *arg)
+lwnl80211_result_e slsidrv_connect_ap(struct netdev *dev, lwnl80211_ap_config_s *ap_connect_config, void *arg)
 {
+	(void)dev;
 	SLSIDRV_ENTER;
 	lwnl80211_result_e result = LWNL80211_INVALID_ARGS;
 	if (!ap_connect_config) {
@@ -499,8 +465,10 @@ connect_ap_fail:
 	return result;
 }
 
-lwnl80211_result_e slsidrv_disconnect_ap(void *arg)
+lwnl80211_result_e slsidrv_disconnect_ap(struct netdev *dev, void *arg)
 {
+	(void)dev;
+
 	SLSIDRV_ENTER;
 	lwnl80211_result_e result = LWNL80211_FAIL;
 	int ret = WiFiNetworkLeave();
@@ -514,8 +482,9 @@ lwnl80211_result_e slsidrv_disconnect_ap(void *arg)
 	return result;
 }
 
-lwnl80211_result_e slsidrv_get_info(lwnl80211_info *wifi_info)
+lwnl80211_result_e slsidrv_get_info(struct netdev *dev, lwnl80211_info *wifi_info)
 {
+	(void)dev;
 	SLSIDRV_ENTER;
 	lwnl80211_result_e result = LWNL80211_INVALID_ARGS;
 	if (wifi_info) {
@@ -549,8 +518,10 @@ lwnl80211_result_e slsidrv_get_info(lwnl80211_info *wifi_info)
 	return result;
 }
 
-lwnl80211_result_e slsidrv_start_softap(lwnl80211_softap_config_s *softap_config)
+lwnl80211_result_e slsidrv_start_softap(struct netdev *dev, lwnl80211_softap_config_s *softap_config)
 {
+	(void)dev;
+
 	SLSIDRV_ENTER;
 	if (!softap_config) {
 		return LWNL80211_INVALID_ARGS;
@@ -647,8 +618,10 @@ start_soft_ap_fail:
 	return ret;
 }
 
-lwnl80211_result_e slsidrv_start_sta(void)
+lwnl80211_result_e slsidrv_start_sta(struct netdev *dev)
 {
+	(void)dev;
+
 	SLSIDRV_ENTER;
 	lwnl80211_result_e result = LWNL80211_FAIL;
 	int ret = SLSI_STATUS_SUCCESS;
@@ -674,8 +647,10 @@ lwnl80211_result_e slsidrv_start_sta(void)
 	return result;
 }
 
-lwnl80211_result_e slsidrv_stop_softap(void)
+lwnl80211_result_e slsidrv_stop_softap(struct netdev *dev)
 {
+	(void)dev;
+
 	SLSIDRV_ENTER;
 	lwnl80211_result_e result = LWNL80211_FAIL;
 	int ret;
@@ -693,8 +668,10 @@ lwnl80211_result_e slsidrv_stop_softap(void)
 	return result;
 }
 
-lwnl80211_result_e slsidrv_set_autoconnect(uint8_t check)
+lwnl80211_result_e slsidrv_set_autoconnect(struct netdev *dev, uint8_t check)
 {
+	(void)dev;
+
 	SLSIDRV_ENTER;
 	lwnl80211_result_e result = LWNL80211_FAIL;
 	int ret = WiFiSetAutoconnect(check);
@@ -705,20 +682,4 @@ lwnl80211_result_e slsidrv_set_autoconnect(uint8_t check)
 		vddbg("External Autoconnect failed to set %d", check);
 	}
 	return result;
-}
-
-struct lwnl80211_lowerhalf_s *slsi_drv_initialize(void)
-{
-	SLSIDRV_ENTER;
-	struct slsi_drv_dev_s *priv;
-
-	priv = (struct slsi_drv_dev_s *)kmm_zalloc(sizeof(struct slsi_drv_dev_s));
-	if (!priv) {
-		return NULL;
-	}
-
-	priv->dev.ops = &g_lwnl80211_drv_ops;
-	priv->initialized = true;
-
-	return &priv->dev;
 }

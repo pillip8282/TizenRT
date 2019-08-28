@@ -1,24 +1,283 @@
-#+BEGIN_SRC plantuml :file test.png
-  User -- netmgr_c
-  User -- netdev_mgr_c
-  VFS -- net_vfs
-  net_vfs -- netdev_ops_h
-  net_vfs -- netstack
-  net_vfs -- netsock
-  netsock *-- netsock_ops
-  netdev_h *-- netdev_ops_h
-  netdev_h -- lwnl80211_ops
-  netdev_h -- ethernet_ops
-  netdev_mgr_c *-- netdev_h
-  netdev_mgr_c - netdev_config_h
-  netmgr_c *-- net_vfs
-  netmgr_c *-- netdev_mgr_c
-  netmgr_c *-- nl_driver
-  netstack -- netstack_ops
-  netstack -- netstack_lwip
-  netstack_lwip *- netstack_ops_lwip
-  netdev_ops_h - nic_config
+* ToDo
+1) make lwip_ioctl.h to platform independent
+2) move os/include/net/lwip to os/net/lwip inside
+3) organize header files
+   - integrate sys/sock_internal.h tinyara/net/socket.h
+4) remove sockets.c in lwIP and create it netstack_lwip.c
+5) DNS
+* Intialize
+** Previous
+#+BEGIN_SRC plantuml :file init_previous.png
+  Actor actor
+  participant os_start
+  participant os_bringup
 
+  participant net_initialize_c
+  participant net_lock
+  participant netdev_sem
+
+  participant "core/init"
+  participant "core/netif"
+  participant "api/tcpip.c"
+
+  participant artik05x_boot
+  participant "scsc/dev"
+  participant "scsc/netif"
+  participant artik05x_wlan
+
+  actor -> os_start: os_start
+  os_start -> net_initialize_c : net_setup
+  net_initialize_c -> net_lock : net_lockinitialize
+  net_initialize_c -> netdev_sem : netdev_seminit
+  net_initialize_c -> "core/init": lwip_init
+
+  note right
+      path: os/net/lwip/
+      stats_init();
+      sys_init()
+      mem_init()
+      memp_init()
+      pbuf_init()
+  end note
+
+  "core/init" -> "core/netif" : netif_init
+  "core/netif" -> "core/netif" : netif_add
+  note right: initialzie network interface like loopback
+
+  ==wi-fi chipset initialize==
+
+  os_start -> os_bringup : os_do_appstart()
+  activate os_bringup
+  os_bringup -> artik05x_boot : board_initialize
+  activate artik05x_boot
+  artik05x_boot -> "scsc/dev" : slsi_driver_initialise
+  activate "scsc/dev"
+      note over "scsc/dev" #FFAAAA : Initialize LSI Wi-Fi Driver
+      "scsc/dev" -> "scsc/dev" : slsi_dev_attach
+      activate "scsc/dev"
+
+      "scsc/dev" -> "scsc/netif" : slsi_netif_init
+      activate "scsc/netif"
+
+      "scsc/netif" -> "scsc/netif" : slsi_netif_add_locked
+      activate "scsc/netif"
+
+      "scsc/netif" -> "scsc/netif" : slsi_alloc_netdev
+      activate "scsc/netif"
+
+      return slsi_alloc_netdev
+      return slsi_netif_add_locked
+      return slsi_netif_init
+
+      note right
+      <b>Important!!!! set netif
+      dev->linkoutput = slsi_linkoutput;
+      dev->output = etharp_output;
+      dev->igmp_mac_filter = slsi_set_multicast_list;
+      end note
+
+      "scsc/dev" -> "scsc/netif" : slsi_netif_register
+      activate "scsc/netif"
+
+      "scsc/netif" -> "scsc/netif" : slsi_netif_register_locked
+      activate "scsc/netif"
+
+      "scsc/netif" -> artik05x_wlan : up_wlan_init
+
+      note right
+      register netif created at slsi_alloc_netdev
+      call netif_add()
+      end note
+
+      return slsi_netif_register_locked
+      return slsi_netif_register
+      return slsi_dev_attach
+      return slsi_driver_initialise
+      return board_initialize
+
+      os_bringup -> net_initialize_c : net_initialize_c
+      activate net_initialize_c
+
+      net_initialize_c -> "api/tcpip.c" : tcpip_init
+      note right
+      <b>Run lwIP main thread
+  end note
+  return net_intiailize
+#+END_SRC
+
+#+RESULTS:
+[[file:init_previous.png]]
+
+** Now
+- setting network interface name is network manager's responsibility
+- setting address of network interface is network manager's role.
+- 
+#+BEGIN_SRC plantuml :file init_now.png
+  Actor actor
+  participant os_start
+  participant os_bringup
+
+  box "TizenRT Network Manager" #LightBlue
+      participant netmgr.c
+      participant netdev_mgr.c
+      participant netdev_mgr_internal
+      participant lwnl80211
+      participant netstack_lwip.c
+      participant netdev_lwip
+  end box
+
+  box "LwIP"
+      participant "core/init"
+      participant "core/netif"
+      participant "api/tcpip.c"
+  end box
+
+  box "Artik053"
+      participant artik05x_boot
+      participant "scsc/dev"
+      participant "scsc/netif"
+      participant artik05x_wlan
+  end box
+
+  actor -> os_start: os_start
+  os_start -> netmgr.c : netmgr_setup
+  note right
+      create lwnl80211_driver
+  end note
+
+      netmgr.c -> netstack_lwip.c : lwip_ns_init
+      netstack_lwip.c -> "core/init" : lwip_init
+      note right : remove registering loop dev
+
+  netmgr.c -> netdev_mgr.c : netdev_mgr_start
+  netdev_mgr.c -> netdev_mgr_internal: nm_register
+  note right : register loopback 
+
+      == Wi-Fi Chipset Initialize ==
+
+      os_start -> os_bringup : os_do_appstart
+      activate os_bringup
+      os_bringup -> artik05x_boot : board_initialize
+      activate artik05x_boot
+      artik05x_boot -> "scsc/dev" : slsi_driver_initialise
+      activate "scsc/dev"
+      note over "scsc/dev" #FFAAAA : Initialize LSI Wi-Fi Driver
+      "scsc/dev" -> "scsc/dev" : slsi_dev_attach
+      activate "scsc/dev"
+
+      "scsc/dev" -> "scsc/netif" : slsi_netif_init
+      activate "scsc/netif"
+
+      "scsc/netif" -> "scsc/netif" : slsi_netif_add_locked
+      activate "scsc/netif"
+
+      "scsc/netif" -> "scsc/netif" : slsi_alloc_netdev
+      activate "scsc/netif"
+
+      "scsc/netif" -> netdev_mgr.c : netdev_register
+      netdev_mgr.c -> netdev_mgr_internal : nm_register
+      netdev_mgr_internal -> netdev_lwip : lwip_init_nic
+      note right: register linkoutput, wifi hal layer
+      netdev_lwip -> "core/netif" : netif_add
+
+      return slsi_alloc_netdev
+      return slsi_netif_add_locked
+      return slsi_netif_init
+
+      note right
+      <b> Register Wi-Fi chipset
+      remove slsi_netif_register
+      because netdev_register already
+      registered the interface by netdev_config
+  end note
+
+  return slsi_dev_attach
+  return slsi_driver_initialise
+  return board_initialize
+
+  os_bringup -> netmgr.c : netmgr_start
+  activate netmgr.c
+
+      netmgr.c -> lwnl80211: lwnl80211_register
+      note right: call register_driver
+      netmgr.c -> netstack_lwip.c : lwip_ns_start
+      netstack_lwip.c -> "api/tcpip.c" : tcpip_init
+
+      return netmgr_start
+
+
+#+END_SRC
+
+#+RESULTS:
+[[file:init_now.png]]
+
+
+* Architecture
+* ToDo
+** ioctl
+- SIOCGIFCONF
+- refer nic_display_state()
+** loopback
+- _register loopback_
+** SIOCLWIP
+- DNS, DHCP
+** Architecture
+
+#+BEGIN_SRC plantuml :file test2.png
+  App --> socket_api
+  App --> nl_driver
+  note on link : App like wifi_mgr uses nl_ioctl
+  VFS --> net_vfs
+  Vendor --> netdev_mgr
+  Vendor --> netmgr
+  socket_api --> nl_driver
+  socket_api --> netstack
+  socket_api --> VFS
+  net_vfs -> netdev
+  net_vfs --> netsock
+  net_vfs --> netstack
+  netdev *-- ethernet_ops
+  netdev *-- lwnl80211_ops
+  netdev *-- netdev_ops_h
+  netdev <|-- netdev_lwip
+  netdev_mgr - netdev_config_h
+  netdev_mgr -> netdev_mgr_i
+  netdev_mgr_i *-- netdev
+  netdev_lwip -> netdev_mgr_i
+  netdev_ops_h - nic_config
+  netmgr *-- netdev_mgr
+  netmgr *-- nl_driver
+  netmgr --> netstack
+  netsock *-- netsock_ops
+  netstack <|-- netstack_lwip
+  netstack *-- netstack_ops
+  netstack_lwip *- netstack_ops_lwip
+  nl_driver --> netdev
+  note on link: nl_driver finds a right netdev by a name that user passed
+  lwnl80211_ops <|-- slsi_drv
+  lwnl80211_ops <|-- realtek_drv
+
+
+  note bottom of netdev_mgr_i
+      Define hidden method
+  end note
+
+  note top of netmgr
+      Contain system information like hostname
+  end note
+
+  class netdev_lwip {
+  }
+
+  class netdev_mgr_i {
+      class netdev g_netdevices[CONFIG_NUM_NETDEV];
+      struct netdev *nm_register(struct netdev_config *config);
+      struct netdev *get_netdev(char *ifname);
+      int netdev_foreach(netdev_callback_t callback, void *arg);
+      int nm_count(void);
+      int nm_ifup(struct netdev *dev);
+      int nm_ifdown(struct netdev *dev);
+  }
 
   class netstack_lwip {
       class netstack *get_netstack_lwip();
@@ -28,15 +287,21 @@
       class connect_ap()
   }
 
-  class netmgr_c {
+  class netmgr {
       class netdev_mgr ndev_mgr;
-      int netmgr_start(void *);
+      class nl_driver;
+      char hostname;
       int netmgr_init(void *);
+      int netmgr_start(void *);
   }
 
-  class netdev_mgr_c {
-      class netdev g_netdevices[CONFIG_NUM_NETDEV];
-      class netdev get_netdev(string name);
+  class netdev_mgr {
+      struct netdev *netdev_register(struct netdev_config *config);
+      int netdev_start(netdev *dev);
+      int netdev_set_hwaddr(netdev *dev)
+      int netdev_get_hwaddr(netdev *dev)
+      int netdev_input(netdev *dev, u8_t *d, u16_t len);
+      int netdev_get_mtu(netdev *dev, int *mtu);
       int register_netdev(class netdev_config_h config);
       int netdev_count(); // return the number of registered devices
   }
@@ -48,15 +313,17 @@
   class nic_config {
   }
 
-  class netdev_h {
+  class netdev {
       string ifname;
       void *nic; // this should be handled inside lwip wrapper
-      netdev_ops_h ops;
+      netdev_ops_h drv_ops;
+      struct netdev_ops stk_ops;
   }
 
   note top of netdev_ops_h: implementations related to lwIP
   class netdev_ops_h {
-      void *init_nic(class nic_config);
+      void *init_nic(nic_config *config);
+      void *get_nic(void *);
       int get_ip4addr(type);
       int set_ip4addr(type, addr);
       int get_ip6addr(type);
@@ -70,6 +337,7 @@
       int ifdown();
       int dhcpc_start(); // optional
       int dhcps_start(); // optional
+      void *nic;
   }
 
   class netdev_ops_lwip extends netdev_ops_h {
@@ -122,9 +390,13 @@
   class nl_driver {
       int register_nl_driver();
       int unregister_nl_driver();
+      int nl_ioctl();
+      int nl_postmsg(netdev *dev); // from where
   }
 #+END_SRC
 
 #+RESULTS:
-[[file:test.png]]
+[[file:test2.png]]
+
+
 

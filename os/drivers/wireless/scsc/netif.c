@@ -27,9 +27,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/clock.h>
 #include <arpa/inet.h>
-#include <net/lwip/netif/etharp.h>
-#include <net/lwip/ethip6.h>
-#include <net/lwip/igmp.h>
+#include <tinyara/net/netdev_mgr.h>
 
 #include "debug_scsc.h"
 #include "netif.h"
@@ -37,12 +35,14 @@
 #include "mgt.h"
 #include "scsc_wifi_fcq.h"
 #include "t20_ops.h"
+#include "slsi_drv.h"
 
 #define IP4_OFFSET_TO_TOS_FIELD 1
 
 /* Net Device callback operations */
-static int slsi_net_open(struct netif *dev)
+int slsi_net_open(struct netdev *dev)
 {
+	// pkbuild
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
 	int err;
@@ -78,18 +78,20 @@ static int slsi_net_open(struct netif *dev)
 #endif
 	}
 
-	SLSI_ETHER_COPY(dev->d_mac.ether_addr_octet, sdev->netdev_addresses[SLSI_NET_INDEX_WLAN]);
+	// pkbuild SLSI_ETHER_COPY(dev->d_mac.ether_addr_octet, sdev->netdev_addresses[SLSI_NET_INDEX_WLAN]);
+	(void)netdev_set_hwaddr(dev, sdev->netdev_addresses[SLSI_NET_INDEX_WLAN], IFHWADDRLEN);
+
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
 	ndev_vif->is_available = true;
 	sdev->netdev_up_count++;
 
 	SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 
-	memcpy(dev->hwaddr, sdev->hw_addr, ETHARP_HWADDR_LEN);
-	dev->flags |= NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_BROADCAST | NETIF_FLAG_IGMP;
+	// pkbuild memcpy(dev->hwaddr, sdev->hw_addr, ETHARP_HWADDR_LEN);
+	//dev->flags |= NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_BROADCAST | NETIF_FLAG_IGMP;
 
 	/* Put the network interface in the UP state */
-	netif_set_up(dev);
+	// pkbuild netif_set_up(dev);
 	reinit_completion(&ndev_vif->sig_wait.completion);
 
 	/* Send interface enabled event to supplicant if it is present. This could happen if ifdown-ifup is done
@@ -101,7 +103,7 @@ static int slsi_net_open(struct netif *dev)
 	return 0;
 }
 
-static int slsi_net_stop(struct netif *dev)
+int slsi_net_stop(struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
@@ -109,7 +111,7 @@ static int slsi_net_stop(struct netif *dev)
 	SLSI_NET_DBG1(dev, SLSI_NETDEV, "\n");
 
 	/* Put the network interface in the DOWN state */
-	netif_set_down(dev);
+	// netif_set_down(dev);
 
 	if (!ndev_vif->is_available) {
 		/* May have been taken out by the Chip going down */
@@ -131,7 +133,7 @@ static int slsi_net_stop(struct netif *dev)
 }
 
 /* This is called after the WE handlers */
-static int slsi_net_ioctl(struct netif *dev, struct ifreq *rq, int cmd)
+static int slsi_net_ioctl(struct netdev *dev, struct ifreq *rq, int cmd)
 {
 	SLSI_NET_DBG1(dev, SLSI_NETDEV, "ioctl cmd:0x%.4x\n", cmd);
 
@@ -165,7 +167,7 @@ static u16 slsi_get_priority_from_tos(u8 *frame, u16 proto)
 	}
 }
 
-static bool slsi_net_downgrade_ac(struct netif *dev, struct max_buff *mbuf)
+static bool slsi_net_downgrade_ac(struct netdev *dev, struct max_buff *mbuf)
 {
 	SLSI_UNUSED_PARAMETER(dev);
 
@@ -251,7 +253,7 @@ int slsi_ac_to_tids(enum slsi_traffic_q ac, int *tids)
 	return 0;
 }
 
-static void slsi_net_downgrade_pri(struct netif *dev, struct slsi_peer *peer, struct max_buff *mbuf)
+static void slsi_net_downgrade_pri(struct netdev *dev, struct slsi_peer *peer, struct max_buff *mbuf)
 {
 	/* in case we are a client downgrade the ac if acm is
 	 * set and tspec is not established
@@ -265,7 +267,7 @@ static void slsi_net_downgrade_pri(struct netif *dev, struct slsi_peer *peer, st
 	SLSI_NET_DBG3(dev, SLSI_TX, "To UP:%d\n", mbuf->user_priority);
 }
 
-static u16 slsi_net_select_queue(struct netif *dev, struct max_buff *mbuf)
+static u16 slsi_net_select_queue(struct netdev *dev, struct max_buff *mbuf)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
@@ -333,7 +335,7 @@ int eth_send_eapol(const u8 *src, const u8 *dst, const u8 *buf, u16 len, u16 pro
 	struct max_buff *mbuf = NULL;
 	int alloc_size;
 	struct slsi_dev *sdev = cm_ctx.sdev;
-	struct netif *dev;
+	struct netdev *dev;
 	struct netdev_vif *ndev_vif;
 
 	if (!sdev) {
@@ -370,29 +372,30 @@ int eth_send_eapol(const u8 *src, const u8 *dst, const u8 *buf, u16 len, u16 pro
 	return ERR_OK;
 }
 
-void slsi_ethernetif_input(struct netif *dev, u8_t *frame_ptr, u16_t len)
+void slsi_ethernetif_input(struct netdev *dev, u8_t *frame_ptr, u16_t len)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
 
 	SLSI_MUTEX_LOCK(sdev->rx_data_mutex);
 
-	dev->d_buf = frame_ptr;
-	dev->d_len = len;
+	// pkbuild
+	//dev->d_buf = frame_ptr;
+	//dev->d_len = len;
 
 	SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_packets_given_to_lwip);
-	ethernetif_input(dev);
+	netdev_input(dev, frame_ptr, len);
 
 	SLSI_MUTEX_UNLOCK(sdev->rx_data_mutex);
 }
 
-static err_t slsi_linkoutput(struct netif *dev, struct pbuf *buf)
+static int slsi_linkoutput(struct netdev *dev, uint8_t *data, uint16_t dlen)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
 	struct max_buff *mbuf = NULL;
-	struct pbuf *next_buf;
-	int offset = 0;
+	//struct pbuf *next_buf;
+	//int offset = 0;
 	int ret = ERR_OK;
 	u8 *mbuf_data;
 
@@ -406,7 +409,9 @@ static err_t slsi_linkoutput(struct netif *dev, struct pbuf *buf)
 		goto exit;
 	}
 
-	if ((buf == NULL) || (buf->tot_len == 0) || (buf->len == 0)) {
+	// pkbuild 
+	//if ((buf == NULL) || (buf->tot_len == 0) || (buf->len == 0)) {
+	if (data == NULL || dlen == 0) {
 		SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_drop_invalid_pbuf);
 		SLSI_NET_ERR(dev, "Invalid pbuf\n");
 
@@ -414,7 +419,8 @@ static err_t slsi_linkoutput(struct netif *dev, struct pbuf *buf)
 		goto exit;
 	}
 
-	SLSI_NET_DBG3(dev, SLSI_TX, "tot_len: %d, len: %d\n", buf->tot_len, buf->len);
+	//SLSI_NET_DBG3(dev, SLSI_TX, "tot_len: %d, len: %d\n", buf->tot_len, buf->len);
+	SLSI_NET_DBG3(dev, SLSI_TX, "tot_len: %d\n", dlen);
 
 	if (sdev->tx_mbuf == NULL) {
 		SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_drop_null_mbuf);
@@ -424,9 +430,10 @@ static err_t slsi_linkoutput(struct netif *dev, struct pbuf *buf)
 		goto exit;
 	}
 
-	if (buf->tot_len + (fapi_sig_size(ma_unitdata_req) + 160) > SLSI_TX_MBUF_SIZE) {
+	//if (buf->tot_len + (fapi_sig_size(ma_unitdata_req) + 160) > SLSI_TX_MBUF_SIZE) {
+	if (dlen + (fapi_sig_size(ma_unitdata_req) + 160) > SLSI_TX_MBUF_SIZE) {
 		SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_drop_large_pbuf);
-		SLSI_NET_ERR(dev, "Large packet: %d\n", buf->tot_len);
+		SLSI_NET_ERR(dev, "Large packet: %d\n", dlen);
 
 		ret = ERR_VAL;
 		goto exit;
@@ -435,23 +442,26 @@ static err_t slsi_linkoutput(struct netif *dev, struct pbuf *buf)
 	mbuf = sdev->tx_mbuf;
 	mbuf_reset(mbuf);
 	mbuf_reserve_headroom(mbuf, (fapi_sig_size(ma_unitdata_req) + 160));
-	mbuf_put(mbuf, buf->tot_len);
+	//mbuf_put(mbuf, buf->tot_len);
+	mbuf_put(mbuf, dlen);
 
 	mbuf_data = slsi_mbuf_get_data(mbuf);
+	// pkbuild
 	/* Copy the data from multiple buffer */
-	next_buf = buf;
-	while (next_buf) {
-		if (offset >= buf->tot_len) {
-			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_drop_wrong_length);
-			SLSI_NET_ERR(dev, "buffer has more data than tol_len. offset:%d, tot_len: %d\n", offset, buf->tot_len);
+	/* next_buf = buf; */
+	/* while (next_buf) { */
+	/* 	if (offset >= buf->tot_len) { */
+	/* 		SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.tx_drop_wrong_length); */
+	/* 		SLSI_NET_ERR(dev, "buffer has more data than tol_len. offset:%d, tot_len: %d\n", offset, buf->tot_len); */
 
-			ret = ERR_VAL;
-			goto exit;
-		}
-		memcpy(&mbuf_data[offset], next_buf->payload, next_buf->len);
-		offset += next_buf->len;
-		next_buf = next_buf->next;
-	}
+	/* 		ret = ERR_VAL; */
+	/* 		goto exit; */
+	/* 	} */
+	/* 	memcpy(&mbuf_data[offset], next_buf->payload, next_buf->len); */
+	/* 	offset += next_buf->len; */
+	/* 	next_buf = next_buf->next; */
+	/* } */
+	memcpy(mbuf_data, data, dlen);
 
 	mbuf_set_mac_header(mbuf, 0);
 	mbuf->ac_queue = slsi_net_select_queue(dev, mbuf);
@@ -483,7 +493,7 @@ exit:
 				  (u8)(ip)[2], \
 				  (u8)(ip)[3] \
 }
-static err_t slsi_set_multicast_list(struct netif *dev, const ip4_addr_t *group, u8_t action)
+static int slsi_set_multicast_list(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	struct slsi_dev *sdev = ndev_vif->sdev;
@@ -498,7 +508,7 @@ static err_t slsi_set_multicast_list(struct netif *dev, const ip4_addr_t *group,
 		return 0;
 	}
 
-	if (IGMP_ADD_MAC_FILTER) {
+	if (NM_ADD_MAC_FILTER) {
 		SLSI_NET_DBG3(dev, SLSI_NETDEV, "Add filter for mac address = %pM\n", addr);
 		return slsi_set_multicast_packet_filters(sdev, dev, addr);
 	} else {
@@ -507,14 +517,50 @@ static err_t slsi_set_multicast_list(struct netif *dev, const ip4_addr_t *group,
 	}
 }
 
-static struct netif *slsi_alloc_netdev(int sizeof_priv)
+static struct netdev *slsi_alloc_netdev(int sizeof_priv)
 {
-	struct netif *dev;
+	struct nic_io_ops nops= {slsi_linkoutput, slsi_set_multicast_list};
+	struct netdev_config nconfig;
+	nconfig.ops = &nops;
+	nconfig.flag = NM_FLAG_ETHARP | NM_FLAG_ETHERNET | NM_FLAG_BROADCAST | NM_FLAG_IGMP;
+	nconfig.mtu = CONFIG_NET_ETH_MTU;
+	nconfig.hwaddr_len = IFHWADDRLEN;
+
+	nconfig.is_default = 1;
+
+	nconfig.type = NM_WIFI;
+	nconfig.t_ops.wl.init = slsidrv_init;
+	nconfig.t_ops.wl.deinit = slsidrv_deinit;
+	nconfig.t_ops.wl.scan_ap = slsidrv_scan_ap;
+	nconfig.t_ops.wl.connect_ap = slsidrv_connect_ap;
+	nconfig.t_ops.wl.disconnect_ap = slsidrv_disconnect_ap;
+	nconfig.t_ops.wl.get_info = slsidrv_get_info;
+	nconfig.t_ops.wl.start_softap = slsidrv_start_softap;
+	nconfig.t_ops.wl.start_sta = slsidrv_start_sta;
+	nconfig.t_ops.wl.stop_softap = slsidrv_stop_softap;
+	nconfig.t_ops.wl.set_autoconnect = slsidrv_set_autoconnect;
+	nconfig.t_ops.wl.drv_ioctl = NULL;
+
+	//nconfig.d_ioctl = slsi_net_ioctl;
+
+	void *priv = kmm_zalloc(sizeof_priv);
+	if (priv == NULL) {
+		return NULL;
+	}
+	nconfig.priv = priv;
+
+	return netdev_register(&nconfig);
+}
+
+#if 0
+static struct netdev *slsi_alloc_netdev(int sizeof_priv)
+{
+	struct netdev *dev;
 	void *priv;
 
 	SLSI_INFO_NODEV("slsi_alloc_netdev\n");
 
-	dev = kmm_zalloc(sizeof(struct netif));
+	dev = kmm_zalloc(sizeof(struct netdev));
 	if (dev == NULL) {
 		return NULL;
 	}
@@ -526,7 +572,7 @@ static struct netif *slsi_alloc_netdev(int sizeof_priv)
 	}
 
 	/* Initialize the driver structure */
-	dev->d_private = priv;
+	dev->priv = priv;
 	dev->d_ifup = slsi_net_open;
 	dev->d_ifdown = slsi_net_stop;
 	dev->linkoutput = slsi_linkoutput;
@@ -543,11 +589,12 @@ static struct netif *slsi_alloc_netdev(int sizeof_priv)
 
 	return dev;
 }
+#endif
 
-static void slsi_free_netdev(struct netif *dev)
+static void slsi_free_netdev(struct netdev *dev)
 {
-	if (dev->d_private) {
-		kmm_free(dev->d_private);
+	if (dev->priv) {
+		kmm_free(dev->priv);
 	}
 
 	kmm_free(dev);
@@ -555,7 +602,7 @@ static void slsi_free_netdev(struct netif *dev)
 
 static int slsi_netif_add_locked(struct slsi_dev *sdev, int ifnum)
 {
-	struct netif *dev = NULL;
+	struct netdev *dev = NULL;
 	struct netdev_vif *ndev_vif;
 	int alloc_size, ret;
 	int i;
@@ -645,7 +692,8 @@ static int slsi_netif_add_locked(struct slsi_dev *sdev, int ifnum)
 	}
 
 	if (ifnum < CONFIG_SCSC_WLAN_MAX_INTERFACES + 1) {
-		SLSI_ETHER_COPY(dev->d_mac.ether_addr_octet, sdev->netdev_addresses[ifnum]);
+		// pkbuild SLSI_ETHER_COPY(dev->d_mac.ether_addr_octet, sdev->netdev_addresses[ifnum]);
+		netdev_set_hwaddr(dev, sdev->netdev_addresses[ifnum], ETH_ALEN);
 		sdev->netdev[ifnum] = dev;
 	} else {
 		goto exit_with_error;
@@ -704,26 +752,27 @@ int slsi_netif_init(struct slsi_dev *sdev)
 	return 0;
 }
 
-void up_wlan_init(struct netif *dev);
+void up_wlan_init(struct netdev *dev);
 
-static int slsi_netif_register_locked(struct slsi_dev *sdev, struct netif *dev)
+static int slsi_netif_register_locked(struct slsi_dev *sdev, struct netdev *dev)
 {
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 	int err = 0;
 
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(sdev->netdev_add_remove_mutex));
-	SLSI_INFO_NODEV("Register:" SLSI_MAC_FORMAT "\n", SLSI_MAC_STR(dev->d_mac.ether_addr_octet));
+	SLSI_INFO_NODEV("Register:" SLSI_MAC_FORMAT "\n", SLSI_MAC_STR(netdev_get_hwaddr_ptr(dev)));
 	if (ndev_vif->is_registered) {
-		SLSI_INFO_NODEV("Register:" SLSI_MAC_FORMAT " Failed: Already registered\n", SLSI_MAC_STR(dev->d_mac.ether_addr_octet));
+		SLSI_INFO_NODEV("Register:" SLSI_MAC_FORMAT " Failed: Already registered\n", SLSI_MAC_STR(netdev_get_hwaddr_ptr(dev)));
 		return 0;
 	}
 
-	up_wlan_init(dev);
+	//pkbuild up_wlan_init(dev);
+	// pkbuild netdev_start(dev);
 
 	return err;
 }
 
-int slsi_netif_register(struct slsi_dev *sdev, struct netif *dev)
+int slsi_netif_register(struct slsi_dev *sdev, struct netdev *dev)
 {
 	int err;
 
@@ -733,12 +782,12 @@ int slsi_netif_register(struct slsi_dev *sdev, struct netif *dev)
 	return err;
 }
 
-static void slsi_netif_remove_locked(struct slsi_dev *sdev, struct netif *dev)
+static void slsi_netif_remove_locked(struct slsi_dev *sdev, struct netdev *dev)
 {
 	int i;
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
-	SLSI_NET_DBG1(dev, SLSI_NETDEV, "Unregister:" SLSI_MAC_FORMAT "\n", SLSI_MAC_STR(dev->d_mac.ether_addr_octet));
+	SLSI_NET_DBG1(dev, SLSI_NETDEV, "Unregister:" SLSI_MAC_FORMAT "\n", SLSI_MAC_STR(netdev_get_hwaddr_ptr(dev)));
 
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(sdev->netdev_add_remove_mutex));
 
@@ -779,7 +828,7 @@ static void slsi_netif_remove_locked(struct slsi_dev *sdev, struct netif *dev)
 	slsi_free_netdev(dev);
 }
 
-void slsi_netif_remove(struct slsi_dev *sdev, struct netif *dev)
+void slsi_netif_remove(struct slsi_dev *sdev, struct netdev *dev)
 {
 	SLSI_MUTEX_LOCK(sdev->netdev_add_remove_mutex);
 	slsi_netif_remove_locked(sdev, dev);

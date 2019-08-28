@@ -51,6 +51,6 @@
 
 #ifndef _NETMGR_H__
 #define _NETMGR_H__
-int netmgr_init(void *);
-int netmgr_start(void *);
+void netmgr_init(void *);
+void netmgr_start(void *);
 #endif // _NETMGR_H__

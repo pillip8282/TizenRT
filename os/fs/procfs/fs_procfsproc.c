@@ -843,7 +843,7 @@ static ssize_t proc_entry_groupfd(FAR struct proc_file_s *procfile, FAR struct t
 #if CONFIG_NFILE_DESCRIPTORS > 0	/* Guaranteed to be true */
 	FAR struct file *file;
 #endif
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
+#ifdef CONFIG_NET_TASK_BIND
 	FAR struct socket *socket;
 #endif
 	size_t remaining;
@@ -889,7 +889,7 @@ static ssize_t proc_entry_groupfd(FAR struct proc_file_s *procfile, FAR struct t
 	}
 #endif
 
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
+#ifdef CONFIG_NET_TASK_BIND
 	linesize = snprintf(procfile->line, STATUS_LINELEN, "\n%3-s %-2s %-3s %s", "SD", "RF", "TYP", "FLAGS");
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining, &offset);
 

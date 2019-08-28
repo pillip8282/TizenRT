@@ -79,7 +79,9 @@
 #include <tinyara/irq.h>
 #include <tinyara/mm/shm.h>
 #include <tinyara/fs/fs.h>
-
+#if CONFIG_NSOCKET_DESCRIPTORS > 0
+#include <tinyara/net/net_vfs.h>
+#endif
 #include <arch/arch.h>
 
 /********************************************************************************

@@ -46,7 +46,7 @@ static WiFi_InterFace_ID_t g_mode = RTK_WIFI_NONE;
 
 extern struct netif xnetif[NET_IF_NUM];
 
-static struct lwnl80211_ops_s g_lwnl80211_drv_ops = {
+static struct lwnl80211_ops g_lwnl80211_drv_ops = {
 	rtkdrv_init,			/* init */
 	rtkdrv_deinit,			/* deinit */
 	rtkdrv_scan_ap,			/* scan_ap */

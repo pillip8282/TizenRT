@@ -62,7 +62,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 /* some rarely used options */
 #ifndef LWIP_DNS_API_DECLARE_H_ERRNO
 #define LWIP_DNS_API_DECLARE_H_ERRNO  1

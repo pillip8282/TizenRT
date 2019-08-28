@@ -53,6 +53,7 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/sockio.h>
 #include <errno.h>
 #include <debug.h>
 #include <net/if.h>
@@ -145,6 +146,24 @@ int net_close(int sockfd)
 	return st->ops->close(sockfd);
 }
 
+/****************************************************************************
+ * Function: net_poll
+ *
+ * Description:
+ *   poll() waits for one of a set of file descriptors to become ready to
+ *   perform I/O.
+ *
+  * Returned Value:
+ *   0 on success; -1 on error with errno set appropriately.
+ *
+ * Assumptions:
+ *
+ ****************************************************************************/
+int net_poll(int fd, struct pollfd *fds, bool setup)
+{
+	struct netstack *st = get_netstack();
+	return st->ops->poll(fd, fds, setup);
+}
 
 /****************************************************************************
  * Name: net_ioctl
@@ -180,15 +199,6 @@ extern int netdev_imsfioctl(FAR struct socket *sock, int cmd, FAR struct ip_msfi
 extern int netdev_ifrioctl(FAR struct socket *sock, int cmd, FAR struct ifreq *req);
 extern int netdev_nmioctl(FAR struct socket *sock, int cmd, void  *arg);
 
-/* This is really kind of bogus.. When asked for an IP address, this is
- * family that is returned in the ifr structure.  Probably could just skip
- * this since the address family has nothing to do with the Ethernet address.
- */
-#ifdef CONFIG_NET_IPv6
-#define AF_INETX AF_INET6
-#else							/* CONFIG_NET_IPv6 */
-#define AF_INETX AF_INET
-#endif							/* CONFIG_NET_IPv6 */
 
 int net_ioctl(int sockfd, int cmd, unsigned long arg)
 {
@@ -199,26 +209,27 @@ int net_ioctl(int sockfd, int cmd, unsigned long arg)
 	 * been cast to unsigned long.  Verify that the value of the to-be-pointer is
 	 * non-NULL.
 	 */
-	if (!((cmd == FIONREAD) || (cmd == FIONBIO) || (_SIOCVALID(cmd)))) {
+	if (!((_FIOCVALID(cmd)) ||  (_SIOCVALID(cmd)))) {
 		ret = -ENOTTY;
 		goto errout;
 	}
 
-	/* Verify that the sockfd corresponds to valid, allocated socket */
-	sock = get_socket(sockfd);
-	if (NULL == sock) {
-		ret = -EBADF;
-		goto errout;
-	}
+	/* ToDo:  Verify that the sockfd corresponds to valid, allocated socket */
+	/* sock = get_socket(sockfd); */
+	/* if (NULL == sock) { */
+	/* 	ret = -EBADF; */
+	/* 	goto errout; */
+	/* } */
 
 	/* Execute the command */
-#ifdef CONFIG_NET_LWIP
 	struct netstack *st = get_netstack();
-	ret = st->ops->d_ioctl(sockfd, cmd, (void *)((uintptr_t)arg));
-#endif
+	if (st) {
+		ret = st->ops->ioctl(sockfd, cmd, arg);
+	}
 	if (ret == -ENOTTY) {
 		ret = netdev_ifrioctl(sock, cmd, (FAR struct ifreq *)((uintptr_t)arg));
 	}
+
 #ifdef CONFIG_NET_NETMON
 	if (ret == -ENOTTY) {
 		ret = netdev_nmioctl(sock, cmd, (void *)((uintptr_t)arg));
@@ -268,7 +279,6 @@ int net_vfcntl(int sockfd, int cmd, va_list ap)
 {
 
 	FAR struct socket *sock = (struct socket *)get_socket(sockfd);
-	net_lock_t flags;
 	int err = 0;
 	int ret = 0;
 
@@ -332,7 +342,7 @@ int net_vfcntl(int sockfd, int cmd, va_list ap)
 
 	{
 		struct netstack *st = get_netstack();
-		ret = st->ops->fcntl(sockfd, cmd, 0);
+		ret = st->ops->fcntl(sockfd, cmd, ap);
 	}
 	break;
 
@@ -346,9 +356,8 @@ int net_vfcntl(int sockfd, int cmd, va_list ap)
 		 */
 
 	{
-		int mode = va_arg(ap, int);
 		struct netstack *st = get_netstack();
-		ret = st->ops->fcntl(sockfd, cmd, mode);
+		ret = st->ops->fcntl(sockfd, cmd, ap);
 	}
 
 	break;
@@ -453,6 +462,3 @@ void net_releaselist(FAR struct socketlist *list)
 	/*	Todo */
 	return;
 }
-
-#endif							/* CONFIG_NSOCKET_DESCRIPTORS > 0 */
-

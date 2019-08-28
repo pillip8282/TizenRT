@@ -90,9 +90,9 @@ struct eth_hdr_s {
 	uint16_t type;				/* Type code (2 bytes) */
 };
 
-struct ethernet_ops eth {
-	int (*init)(void);
-	int (*deinit)(void);
+struct ethernet_ops {
+	int (*init)(struct netdev *dev);
+	int (*deinit)(struct netdev *dev);
 };
 
 /****************************************************************************

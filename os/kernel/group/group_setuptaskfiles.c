@@ -157,7 +157,7 @@ static inline void sched_dupfiles(FAR struct task_tcb_s *tcb)
  *
  ****************************************************************************/
 
-#if CONFIG_NSOCKET_DESCRIPTORS > 0 && !defined(CONFIG_SDCLONE_DISABLE)
+#if CONFIG_NSOCKET_DESCRIPTORS > 0 && !defined(CONFIG_SDCLONE_DISABLE) && defined(CONFIG_NET_TASK_BIND)
 static inline void sched_dupsockets(FAR struct task_tcb_s *tcb)
 {
 	/* The parent task is the one at the head of the ready-to-run list */
@@ -179,7 +179,6 @@ static inline void sched_dupsockets(FAR struct task_tcb_s *tcb)
 	child  = tcb->cmn.group->tg_socketlist.sl_sockets;
 
 	/* Check each socket in the parent socket list */
-
 	for (i = 0; i < CONFIG_NSOCKET_DESCRIPTORS; i++) {
 		/* Check if this parent socket is allocated.  We can tell if the
 		 * socket is allocated because it will have a positive, non-zero

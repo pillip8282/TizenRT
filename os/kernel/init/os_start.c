@@ -527,7 +527,7 @@ void os_start(void)
 	 * timers or interrupts.
 	 */
 
-	net_setup();
+	netmgr_setup(NULL);
 
 #endif							/* CONFIG_NET */
 

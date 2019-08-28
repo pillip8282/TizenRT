@@ -15,9 +15,48 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+/*
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+ * OF SUCH DAMAGE.
+ *
+ * This file is part of the lwIP TCP/IP stack.
+ *
+ * Author: Adam Dunkels <adam@sics.se>
+ *
+ * Improved by Marc Boucher <marc@mbsi.ca> and David Haas <dhaas@alum.rpi.edu>
+ *
+ */
+
 
 #include <tinyara/config.h>
+#include <fcntl.h>
 #include "netstack.h"
+
+#include <net/lwip/opt.h>
+#include <net/lwip/sys.h>
+#include <net/lwip/netif.h>
 
 static int _socket_argument_validation(int domain, int type, int protocol)
 {
@@ -55,6 +94,7 @@ static int _socket_argument_validation(int domain, int type, int protocol)
 	return 0;
 }
 
+
 /*
  * ops functions
  */
@@ -63,180 +103,99 @@ static int lwip_ns_close(int sockfd)
 	return lwip_close(sockfd);
 }
 
-static int lwip_ns_dupsd(int sockfd)
+
+static int lwip_ns_dup(int sockfd)
 {
-	struct socket *sock1 = NULL;
-	struct socket *sock2 = NULL;
-	struct netconn *conn = NULL;
-	int sockfd2;
-	int err;
-	int ret;
-
-	/* Lock the scheduler throughout the following */
-	sched_lock();
-
-	/* Get the socket structure underlying sockfd */
-
-	sock1 = get_socket(sockfd);
-
-	/* Verify that the sockfd corresponds to valid, allocated socket */
-
-	if (!sock1) {
-		err = EBADF;
-		goto errout;
-	}
-
-	/* Allocate a new netconn with same type as that of sock1 */
-
-	conn = netconn_new(sock1->conn->type);
-
-	sockfd2 = alloc_socket(conn, 0);
-	if (sockfd2 < 0) {
-		err = ENFILE;
-		goto errout;
-	}
-
-	/* Get the socket structure underlying the new descriptor */
-
-	sock2 = (struct socket *)get_socket(sockfd2);
-	if (!sock2) {
-		err = ENOSYS;			/* should not happen */
-		goto errout;
-	}
-
-	/* Duplicate the socket state */
-
-	ret = lwip_ns_clone(sock1, sock2);
-	if (ret < 0) {
-		err = -ret;
-		goto errout;
-
-	}
-
-	sched_unlock();
-	return sockfd2;
-
-errout:
-	sched_unlock();
-	errno = err;
-	return ERROR;
-}
-
-static int lwip_ns_dupsd2(int sockfd1, int sockfd2)
-{
-	struct socket *sock1;
-	struct socket *sock2;
-	int err;
-	int ret;
-
-	/* Lock the scheduler throughout the following */
-
-	sched_lock();
-
-	/* Get the socket structures underly both descriptors */
-
-	sock1 = (struct socket *)get_socket(sockfd1);
-	sock2 = (struct socket *)get_socket(sockfd2);
-
-	/* Verify that the sockfd1 and sockfd2 both refer to valid socket
-	 * descriptors and that sockfd1 has valid allocated conn
-	 */
-
-	if (!sock1 || !sock2) {
-		err = EBADF;
-		goto errout;
-	}
-
-	/* If sockfd2 also has valid allocated conn, then we will have to
-	 * close it!
-	 */
-
-	if (sock2->conn) {
-		netconn_delete(sock2->conn);
-		sock2->conn = NULL;
-	}
-
-	/* Duplicate the socket state */
-
-	ret = lwip_ns_clone(sock1, sock2);
-	if (ret < 0) {
-		err = -ret;
-		goto errout;
-	}
-
-	sched_unlock();
-	return OK;
-
-errout:
-	sched_unlock();
-	errno = err;
-	return ERROR;
-}
-
-static int lwip_ns_clone(FAR struct socket *psock1, FAR struct socket *psock2)
-{
-	int ret = OK;
-
-	/* Todo: Parts of this operation need to be atomic?? */
-	/* Duplicate the socket state */
-	sock2->conn = sock1->conn;	/* Netconn callback */
-	sock2->lastdata = sock1->lastdata;	/* data that was left from the previous read */
-	sock2->lastoffset = sock1->lastoffset;	/* offset in the data that was left from the previous read */
-	sock2->rcvevent = sock1->rcvevent;	/*  number of times data was received, set by event_callback(),
-										   tested by the receive and select / poll functions */
-	sock2->sendevent = sock1->sendevent;	/* number of times data was ACKed (free send buffer), set by event_callback(),
-											   tested by select / poll */
-	sock2->errevent = sock1->errevent;	/* error happened for this socket, set by event_callback(), tested by select / poll */
-
-	sock2->err = sock1->err;	/* last error that occurred on this socket */
-
-	sock2->select_waiting = sock1->select_waiting;	/* counter of how many threads are waiting for this socket using select */
-	sock2->conn->crefs++;
-
-	return ret;
-}
-
-static int lwip_ns_checksd(int sd, int oflags)
-{
-	struct socket *sock = (struct socket *)get_socket(sd);
-
-	/* Verify that the sockfd corresponds to valid, allocated socket */
-
-	if (!sock) {
-		nvdbg("No valid socket for sd: %d\n", sd);
-		return -EBADF;
-	}
-
-	/* NOTE:  We permit the socket FD to be "wrapped" in a stream as
-	 * soon as the socket descriptor is created by socket().  Therefore
-	 * (1) we don't care if the socket is connected yet, and (2) there
-	 * are no access restrictions that can be enforced yet.
-	 */
+	// ToDo
 	return 0;
 }
 
-static int lwip_ns_ioctl(int sockfd, int cmd, unsigned long arg)
+
+static int lwip_ns_dup2(int sockfd1, int sockfd2)
 {
-	return lwip_ioctl(sockfd, cmd, arg);
+	// ToDo
+	return 0;
 }
 
+
+static int lwip_ns_clone(FAR struct socket *psock1, FAR struct socket *psock2)
+{
+	// ToDo
+	return 0;
+}
+
+
+static int lwip_ns_checksd(int sd, int oflags)
+{
+	// ToDo
+	return 0;
+}
+
+extern int netdev_lwipioctl(int sockfd, int cmd, void *arg);
+
+static int lwip_ns_ioctl(int sockfd, int cmd, unsigned long arg)
+{
+  //int res = lwip_ioctl(sockfd, cmd, (void *)arg);
+	int res = netdev_lwipioctl(sockfd, cmd, (void *)arg);
+	if (res < 0) {
+		return -ENOTTY;
+	}
+	return 0;
+}
 
 
 static int lwip_ns_vfcntl(int sockfd, int cmd, va_list ap)
 {
-	return lwip_fcntl(sockfd, cmd, ap);
+	if (cmd == F_SETFL) {
+		int mode = va_arg(ap, int);
+		return lwip_fcntl(sockfd, cmd, mode);
+	} else if (cmd == F_GETFL) {
+		return lwip_fcntl(sockfd, cmd, 0);
+	}
+	return -1;
 }
+
+
+/****************************************************************************
+ * Function: lwip_poll
+ *
+ * Description:
+ *   The standard poll() operation redirects operations on socket descriptors
+ *   to this function.
+ *
+ * Input Parameters:
+ *   sock - An instance of the lwip socket structure.
+ *   fds   - The structure describing the events to be monitored, OR NULL if
+ *           this is a request to stop monitoring events.
+ *   setup - true: Setup up the poll; false: Teardown the poll
+ *
+ * Returned Value:
+ *  0: Success; Negated errno on failure
+ *
+ ****************************************************************************/
+
+static int lwip_ns_poll(int fd, struct pollfd *fds, bool setup)
+{
+	// ToDo
+	return 0;
+}
+
 
 static int lwip_ns_socket(int domain, int type, int protocol)
 {
-	return lwip_socket(domain, type, protocol)
+	return lwip_socket(domain, type, protocol);
 }
+
 
 static int lwip_ns_bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
 	return lwip_bind(s, name, namelen);
 }
 
+static int lwip_ns_connect(int s, const struct sockaddr *name, socklen_t namelen)
+{
+	return lwip_connect(s, name, namelen);
+}
 
 static int lwip_ns_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
@@ -316,7 +275,7 @@ static ssize_t lwip_ns_recvmsg(int sockfd, struct msghdr *msg, int flags)
 }
 
 
-static ssize_t lwip_ns_sendmsg(int s, struct msghdr *msg, int flags)
+static ssize_t lwip_ns_sendmsg(int sockfd, struct msghdr *msg, int flags)
 {
 	uint8_t *buf = (uint8_t *)(msg->msg_iov->iov_base);
 	size_t len = msg->msg_iov->iov_len;
@@ -351,6 +310,8 @@ static int lwip_ns_stop(void *data)
 	return 0;
 }
 
+
+#ifdef CONFIG_NET_ROUTE
 static int lwip_ns_addroute(struct rtentry *entry)
 {
 	if (!entry || !entry->rt_target || !entry->rt_netmask) {
@@ -361,6 +322,7 @@ static int lwip_ns_addroute(struct rtentry *entry)
 	return -ENOTTY;
 }
 
+
 static int lwip_ns_delroute(struct rtentry *entry)
 {
 	if (!entry || !entry->rt_target || !entry->rt_netmask) {
@@ -370,44 +332,53 @@ static int lwip_ns_delroute(struct rtentry *entry)
 	// ToDo
 	return -ENOTTY;
 }
+#endif
 
-static struct netmgr_stack_ops g_lwip_stack_ops = {
+
+struct netstack_ops g_lwip_stack_ops = {
 	lwip_ns_init,
 	lwip_ns_deinit,
 	lwip_ns_start,
 	lwip_ns_stop,
 	lwip_ns_close,
+
 	lwip_ns_dup,
 	lwip_ns_dup2,
 	lwip_ns_clone,
 	lwip_ns_checksd,
 	lwip_ns_ioctl,
-	lwip_ns_fcntl,
+	lwip_ns_vfcntl,
+	lwip_ns_poll,
+
 	lwip_ns_socket,
 	lwip_ns_bind,
+	lwip_ns_connect,
 	lwip_ns_accept,
 	lwip_ns_listen,
 	lwip_ns_shutdown,
+
 	lwip_ns_recv,
 	lwip_ns_recvfrom,
 	lwip_ns_recvmsg,
 	lwip_ns_send,
 	lwip_ns_sendto,
 	lwip_ns_sendmsg,
+
 	lwip_ns_getsockname,
 	lwip_ns_getpeername,
 	lwip_ns_setsockopt,
 	lwip_ns_getsockopt,
+#ifdef CONFIG_NET_ROUTE
 	lwip_ns_addroute,
 	lwip_ns_delroute
+#endif
 };
 
-static struct netstack *g_lwip_stack = {
-	&g_lwip_stack_ops,
-	NULL
-};
 
-struct struct netstack *get_netstack_lwip(void)
+struct netstack g_lwip_stack = {&g_lwip_stack_ops, NULL};
+
+
+struct netstack *get_netstack_lwip(void)
 {
 	return &g_lwip_stack;
 }

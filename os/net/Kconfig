@@ -33,7 +33,12 @@ if NET_LWIP
 source net/lwip/configs/Kconfig
 endif #NET_LWIP
 
-
+config NET_TASK_BIND
+	bool "Bind to the task"
+	depends on NSOCKET_DESCRIPTORS > 0
+	default n
+	---help---
+		Enable bind sockets to task
 
 menu "Driver buffer configuration"
 

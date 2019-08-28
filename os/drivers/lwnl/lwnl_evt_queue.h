@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2019 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,21 @@
  *
  ****************************************************************************/
 
-#ifndef __SLSI_BA_H__
-#define __SLSI_BA_H__
+#ifndef _LWNL_EVT_QUEUE_H__
+#define _LWNL_EVT_QUEUE_H__
 
-#include "dev.h"
+#include <tinyara/lwnl/lwnl80211.h>
+#include <tinyara/fs/fs.h>
 
-void slsi_handle_blockack(struct netdev *dev, struct slsi_peer *peer, u16 vif, u8 *peer_qsta_address, u16 parameter_set, u16 sequence_number, u16 reason_code, u16 direction);
+#define LWNL_NPOLLWAITERS 5
 
-int slsi_ba_process_frame(struct netdev *dev, struct slsi_peer *peer, struct max_buff *mbuf, u16 sequence_number, u16 tid);
+struct lwnl_event;
+struct lwnl_queue;
 
-void slsi_ba_process_complete(struct netdev *dev);
+int lwnl_add_event(lwnl80211_cb_status type, void *buffer);
 
-bool slsi_ba_check(struct slsi_peer *peer, u16 tid);
+void lwnl_queue_initialize(void);
+int lwnl_add_listener(struct file *filep);
+int lwnl_remove_listener(struct file *filep);
 
-void slsi_rx_ba_stop_all(struct netdev *dev, struct slsi_peer *peer);
-
-void slsi_rx_ba_init(struct slsi_dev *sdev);
-#endif
+#endif // _LWNL_EVT_QUEUE_H__

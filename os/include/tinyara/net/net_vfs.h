@@ -202,7 +202,7 @@ void net_initlist(FAR struct socketlist *list);
 /****************************************************************************
  * Name: net_releaselist
  *
- * Description:
+p * Description:
  *   Release resources held by the socket list
  *
  * Input Parameters:

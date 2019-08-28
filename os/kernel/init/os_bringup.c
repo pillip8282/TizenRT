@@ -68,7 +68,7 @@
 #include <tinyara/init.h>
 #include <tinyara/kthread.h>
 #include <tinyara/userspace.h>
-#include <tinyara/net/net_vfs.h> // pkbuild net_initialize is needed??
+#include <tinyara/net/netmgr.h> // pkbuild net_initialize is needed??
 #ifdef CONFIG_SCHED_WORKQUEUE
 #include <tinyara/wqueue.h>
 #endif
@@ -257,8 +257,7 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_NET
 	/* Initialize the network system & Create network task if required */
-
-	net_initialize();
+	netmgr_start(NULL);
 #endif
 
 #ifdef CONFIG_TASK_MANAGER

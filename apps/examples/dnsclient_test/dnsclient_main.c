@@ -65,20 +65,12 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-
-#include <tinyara/net/dns.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
-#ifdef CONFIG_NET_LWIP
-#include <net/lwip/inet.h>
-#else
-#include <arpa/inet.h>
-#endif
 
 /****************************************************************************
  * Definitions

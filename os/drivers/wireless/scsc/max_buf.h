@@ -82,7 +82,7 @@ struct max_buff {
 
 struct slsi_mbuf_work {
 	struct slsi_dev      *sdev;
-	struct netif         *dev; /* This can be NULL */
+	struct netdev         *dev; /* This can be NULL */
 	struct work_s        work;
 	struct max_buff_head queue;
 	void                 *sync_ptr;
@@ -152,7 +152,7 @@ static inline struct max_buff *slsi_mbuf_alloc(unsigned int size)
 #define slsi_mbuf_dequeue(list_)            mbuf_dequeue(list_)
 #define slsi_mbuf_queue_purge(list_)        mbuf_queue_purge(list_)
 
-static inline int slsi_mbuf_work_init(struct slsi_dev *sdev, struct netif *dev, struct slsi_mbuf_work *work, const char *name, void (*func)(FAR void *arg))
+static inline int slsi_mbuf_work_init(struct slsi_dev *sdev, struct netdev *dev, struct slsi_mbuf_work *work, const char *name, void (*func)(FAR void *arg))
 {
 	work->sync_ptr = (void *)sdev;
 	work->sdev = sdev;

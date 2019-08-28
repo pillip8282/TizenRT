@@ -1,5 +1,84 @@
 #include <tinyara/config.h>
 
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netdb.h>
+#include <tinyara/net/stack_ioctl.h>
+#include <tinyara/kmalloc.h>
+
+#include <net/lwip/opt.h>
+#include <net/lwip/netdb.h>
+
+/**********************************************************
+ * Private Function
+ **********************************************************/
+
+static struct addrinfo *_copy_addrinfo(struct addrinfo *src)
+{
+	struct addrinfo *tmp = src;
+	struct addrinfo *prev = NULL;
+	struct addrinfo *root = NULL;
+	while (tmp) {
+		struct addrinfo *dst = NULL;
+		dst = (struct addrinfo *)kumm_malloc(sizeof(struct addrinfo));
+		if (!dst) {
+			ndbg("_copy_addrinfo() kumm_malloc failed\n");
+			break;
+		}
+		dst->ai_flags = tmp->ai_flags;
+		dst->ai_family = tmp->ai_family;
+		dst->ai_socktype = tmp->ai_socktype;
+		dst->ai_protocol = tmp->ai_protocol;
+		dst->ai_addrlen = tmp->ai_addrlen;
+
+		dst->ai_addr = (struct sockaddr *)kumm_malloc(sizeof(struct sockaddr));
+		if (!dst->ai_addr) {
+			ndbg("_copy_addrinfo() kumm_malloc failed\n");
+			kumm_free(dst);
+			break;
+		}
+		memcpy(dst->ai_addr, tmp->ai_addr, sizeof(struct sockaddr));
+
+		if (tmp->ai_canonname) {
+			dst->ai_canonname = (char *)kumm_malloc(sizeof(tmp->ai_canonname));
+			if (!dst->ai_canonname) {
+				ndbg("_copy_addrinfo() kumm_malloc failed\n");
+				kumm_free(dst->ai_addr);
+				kumm_free(dst);
+				break;
+			}
+			memcpy(dst->ai_canonname, tmp->ai_canonname, sizeof(tmp->ai_canonname));
+		} else {
+			dst->ai_canonname = NULL;
+		}
+
+		dst->ai_next = NULL;
+		if (prev) {
+			prev->ai_next = dst;
+		} else {
+			root = dst;
+		}
+		tmp = tmp->ai_next;
+		prev = dst;
+	}
+
+	return root;
+}
+
+static int _free_addrinfo(struct addrinfo *ai)
+{
+	struct addrinfo *next;
+
+	while (ai != NULL) {
+		next = ai->ai_next;
+		kumm_free(ai);
+		ai = next;
+	}
+	return 0;
+}
+
 /****************************************************************************
  * Function: lwip_func_ioctl
  *
@@ -22,9 +101,11 @@ static int lwip_func_ioctl(int cmd, void *arg)
 		return ret;
 	}
 
+#if LWIP_DNS
 	struct addrinfo *res = NULL;
 	struct hostent *host_ent = NULL;
 	struct hostent *user_ent = NULL;
+#endif
 
 	switch (in_arg->type) {
 #if LWIP_DNS
@@ -35,12 +116,12 @@ static int lwip_func_ioctl(int cmd, void *arg)
 			in_arg->ai_res = NULL;
 			ret = -EINVAL;
 		} else {
-			in_arg->ai_res = copy_addrinfo(res);
+			in_arg->ai_res = _copy_addrinfo(res);
 			ret = OK;
 		}
 		break;
 	case FREEADDRINFO:
-		in_arg->req_res = free_addrinfo(in_arg->ai);
+		in_arg->req_res = _free_addrinfo(in_arg->ai);
 		ret = OK;
 		break;
 	case DNSSETSERVER:

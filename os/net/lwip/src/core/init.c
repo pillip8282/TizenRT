@@ -361,7 +361,7 @@ void lwip_init(void)
 	mem_init();
 	memp_init();
 	pbuf_init();
-	netif_init();
+//	netif_init();
 #if LWIP_IPV4
 	ip_init();
 #if LWIP_ARP

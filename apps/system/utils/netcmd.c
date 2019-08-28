@@ -42,9 +42,6 @@
 
 #include <tinyara/clock.h>
 #include <net/lwip/netif.h>
-//#include <net/lwip/dhcp.h>
-//#include <net/lwip/stats.h>
-#include <tinyara/net/ip.h>
 
 #ifdef CONFIG_NETUTILS_NETLIB
 #include <netutils/netlib.h>
@@ -115,7 +112,7 @@ static void nic_display_state(void)
 	for (; i < num_nic; ifr++, i++) {
 		printf("%s\t", ifr->ifr_name);
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		if ((sin->sin_addr.s_addr) == INADDR_LOOPBACK) {
+		if ((sin->sin_addr.s_addr) == htonl(INADDR_LOOPBACK)) {
 			printf("Loop Back\t");
 		} else {
 			struct ifreq tmp;

@@ -1,8 +1,11 @@
 #ifndef _NETMGR_NETSTACK_H__
 #define _NETMGR_NETSTACK_H__
 
-#include <tinyara/config.h>
+#include <poll.h>
 #include <sys/types.h>
+#include <netinet/in.h>
+#include <net/route.h>
+#include <tinyara/net/net_vfs.h>
 
 struct netstack_ops {
 	// start, stop
@@ -15,14 +18,15 @@ struct netstack_ops {
 	int (*close)(int sockfd);
 	int (*dup)(int sockfd);
 	int (*dup2)(int sockfd1, int sockfd2);
-	int (*clone)(struct sock *sock1, struct sock *sock2);
+	int (*clone)(struct socket *sock1, struct socket *sock2);
 	int (*checksd)(int sd, int oflags);
 	int (*ioctl)(int sockfd, int cmd, unsigned long arg); // stack specific option
 	int (*fcntl)(int sockfd, int cmd, va_list ap);
-
+	int (*poll)(int fd, struct pollfd *fds, bool setup);
 	// BSD Socket API
 	int (*socket)(int domain, int type, int protocol);
 	int (*bind)(int s, const struct sockaddr *name, socklen_t namelen);
+	int (*connect)(int s, const struct sockaddr *name, socklen_t namelen);
 	int (*accept)(int s, struct sockaddr *addr, socklen_t *addrlen);
 	int (*listen)(int s, int backlog);
 	int (*shutdown)(int s, int how);
@@ -38,12 +42,14 @@ struct netstack_ops {
 	int (*getsockopt)(int s, int level, int optname, void *optval, socklen_t *optlen);
 
 	// etc
+#ifdef CONFIG_NET_ROUTE
 	int (*addroute)(struct rtentry *entry);
 	int (*delroute)(struct rtentry *entry);
+#endif
 };
 
 struct netstack {
-	struct netstack_ops ops;
+	struct netstack_ops *ops;
 	void *data;
 };
 

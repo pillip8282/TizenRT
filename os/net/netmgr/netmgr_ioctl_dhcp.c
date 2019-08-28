@@ -1,8 +1,21 @@
 #include <tinyara/config.h>
+#include <fcntl.h>
+#include <mqueue.h>
+#include <errno.h>
 
 #define DHCPD_MQ_NAME "dhcpd_queue"
 #define DHCPD_MQ_LEN 11
 #define DHCPD_MQ_MAX_LEN 20
+
+typedef enum {
+	DHCP_EVT_ACK,
+	DHCP_EVT_NACK,
+} dhcp_evt_type_e;
+
+typedef struct dhcp_node {
+	int ipaddr;
+	char macaddr[6];
+} dhcp_node_s;
 
 static void _dhcpd_join(dhcp_evt_type_e type, void *data)
 {

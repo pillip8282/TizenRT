@@ -381,12 +381,6 @@ struct netif {
 #define IF__NETIF_CHECKSUM_ENABLED(netif, chksumflag)
 #endif							/* LWIP_CHECKSUM_CTRL_PER_NETIF */
 
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-#if CONFIG_NET_LWIP
-extern struct netif *g_netdevices;
-#endif
-#endif
-
 /** The list of network interfaces. */
 extern struct netif *netif_list;
 /** The default network interface. */

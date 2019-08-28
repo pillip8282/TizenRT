@@ -157,6 +157,7 @@
 #define FIONWRITE       _FIOC(0x0006)	/* IN:  Location to return value (int *)
 										 * OUT: Bytes writable to this fd
 										 */
+#define FIONBIO         _FIOC(0x0007)
 
 /* TinyAra file system ioctl definitions **************************************/
 

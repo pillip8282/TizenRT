@@ -20,6 +20,9 @@ ifeq ($(CONFIG_SCSC_WLAN),y)
 
 #Upper driver
 CSRCS += \
+	slsi_drv.c
+
+CSRCS += \
 	dev.c \
 	netif.c \
 	rx.c \

@@ -473,8 +473,8 @@ typedef struct ip_mreq {
 void lwip_socket_thread_init(void);	/* LWIP_NETCONN_SEM_PER_THREAD==1: initialize thread-local semaphore */
 void lwip_socket_thread_cleanup(void);	/* LWIP_NETCONN_SEM_PER_THREAD==1: destroy thread-local semaphore */
 
-struct socket *get_socket(int sd);
-int alloc_socket(struct netconn *newconn, int accepted);
+struct lwip_sock *get_socket(int sd);
+//int alloc_socket(struct netconn *newconn, int accepted);
 
 int lwip_accept(int s, struct sockaddr *addr, socklen_t * addrlen);
 int lwip_bind(int s, const struct sockaddr *name, socklen_t namelen);
@@ -484,7 +484,7 @@ int lwip_getsockname(int s, struct sockaddr *name, socklen_t * namelen);
 int lwip_getsockopt(int s, int level, int optname, void *optval, socklen_t * optlen);
 int lwip_setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen);
 int lwip_close(int s);
-int lwip_sock_close(struct socket *sock);
+int lwip_sock_close(struct lwip_sock *sock);
 int lwip_connect(int s, const struct sockaddr *name, socklen_t namelen);
 int lwip_listen(int s, int backlog);
 int lwip_recv(int s, void *mem, size_t len, int flags);

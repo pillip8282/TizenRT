@@ -1,13 +1,19 @@
 #ifndef __TIZENRT_NETDEV_MGR_INTERNAL_H__
 #define __TIZENRT_NETDEV_MGR_INTERNAL_H__
 
+#include <stdint.h>
 #include <tinyara/net/netdev_mgr.h>
 
-#include <tinyara/lwnl/lwnl80211.h>
-#include <tinyara/net/ethernet.h>
 #ifdef CONFIG_NET_LWIP
-#include <net/lwip/netif.h>
+// pkbuild todo: lwip code should be removed.
+// #include <net/lwip/netif.h>
 #endif
+
+#define NETDEV_IP 1
+#define NETDEV_GW 2
+#define NETDEV_NETMASK 3
+
+#define ND_NETOPS(dev, method) (((struct netdev_ops *)((dev)->ops))->method)
 
 struct nic_config {
 	int flag;
@@ -21,40 +27,28 @@ struct nic_config {
 	struct sockaddr_storage netmask6;
 	struct sockaddr_storage gw6;
 	int is_default;
+	int loopback;
 	struct nic_io_ops io_ops;
 };
 
-struct netdev {
-	char ifname[IFNAMSIZ];
-
-	/*	data plane */
-	struct netdev_ops *ops;
-
-	/*  device control to proceed mii */
-	int (*d_ioctl)(struct netdev *dev, int cmd, unsigned long arg);
-
-	netif_type type;
-	union {
-		struct ethernet_ops eth;
-		struct lwnl80211_ops wl;
-	} t_ops;
-
-	void *priv;
-};
-
 struct netdev_ops {
+	/*  Initialize NIC */
+	int (*init_nic)(struct netdev *dev, struct nic_config *config);
+	int (*deinit_nic)(struct netdev *dev);
+
+	/*  Address */
 	int (*get_ip4addr)(struct netdev *dev, struct sockaddr *addr, int type);
 	int (*set_ip4addr)(struct netdev *dev, struct sockaddr *addr, int type);
 	int (*get_ip6addr)(struct netdev *dev, struct sockaddr_storage *addr, int type);
 	int (*set_ip6addr)(struct netdev *dev, struct sockaddr_storage *addr, int type);
 	int (*delete_ipaddr)(struct netdev *dev);
 
-	int (*get_hwaddr)(struct netdev *dev, sockaddr *hwaddr);
-	int (*set_hwaddr)(struct netdev *dev, sockaddr *hwaddr);
+	int (*get_hwaddr)(struct netdev *dev, struct sockaddr *hwaddr);
+	int (*set_hwaddr)(struct netdev *dev, struct sockaddr *hwaddr);
 
 	int (*get_mtu)(struct netdev *dev, int *mtu);
-	int (*get_flag)(struct netdev *dev, int *flag);
-
+	int (*get_flag)(struct netdev *dev, uint8_t *flag);
+	/*  Interface control */
 	int (*ifup)(struct netdev *dev);
 	int (*ifdown)(struct netdev *dev);
 
@@ -62,9 +56,22 @@ struct netdev_ops {
 	 */
 	int (*joingroup)(struct netdev *dev, struct in_addr *addr);
 	int (*leavegroup)(struct netdev *dev, struct in_addr *addr);
+
+	int (*input)(struct netdev *dev, uint8_t *data, uint16_t len);
+	int (*linkoutput)(struct netdev *dev, uint8_t *data, uint16_t len);
+	int (*igmp_mac_filter)(struct netdev *dev, const struct in_addr *group, netdev_mac_filter_action action);
+	/*  NIC stack specific */
+	void *nic;
 };
 
-struct netdev *get_netdev(char *ifname);
-int netdev_count(void);
+typedef int (*netdev_callback_t)(struct netdev *dev, void *arg);
+
+void nm_init(void);
+struct netdev *nm_register(struct netdev_config *config);
+struct netdev *nm_get_netdev(char *ifname);
+int nm_foreach(netdev_callback_t callback, void *arg);
+int nm_count(void);
+int nm_ifup(struct netdev *dev);
+int nm_ifdown(struct netdev *dev);
 
 #endif // __TIZENRT_NETDEV_MGR_INTERNAL_H__

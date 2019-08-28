@@ -22,36 +22,78 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-#include <tinyara/config.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <tinyara/lwnl/lwnl80211.h>
+#include <tinyara/net/ethernet.h>
 
+#define NM_MAX_HWADDR_LEN 6
+
+#define NM_FLAG_BROADCAST    0x02U
+/** If set, the netif is an ethernet device using ARP.
+ * Set by the netif driver in its init function.
+ * Used to check input packet types and use of DHCP. */
+#define NM_FLAG_ETHARP       0x08U
+/** If set, the netif is an ethernet device. It might not use
+ * ARP or TCP/IP if it is used for PPPoE only.
+ */
+#define NM_FLAG_ETHERNET     0x10U
+/** If set, the netif has IGMP capability.
+ * Set by the netif driver in its init function. */
+#define NM_FLAG_IGMP         0x20U
+/** If set, the netif has MLD6 capability.
+ * Set by the netif driver in its init function. */
+#define NM_FLAG_MLD6         0x40U
 
 typedef enum {
+	NM_LOOPBACK,
 	NM_WIFI,
 	NM_ETHERNET,
+	NM_UNKNOWN,
 } netdev_type;
 
-/*  lwip dependent: need to change it to independent to lwip */
-/*  ToDo : remove lwip structures */
+typedef enum {
+	/** Delete a filter entry */
+	NM_DEL_MAC_FILTER = 0,
+	/** Add a filter entry */
+	NM_ADD_MAC_FILTER = 1
+} netdev_mac_filter_action;
+
+struct netdev {
+	char ifname[IFNAMSIZ];
+
+	/*  device control to proceed mii */
+	int (*d_ioctl)(struct netdev *dev, int cmd, unsigned long arg);
+
+	netdev_type type;
+	union {
+		struct ethernet_ops eth;
+		struct lwnl80211_ops wl;
+	} t_ops;
+
+	uint8_t *tx_buf; // SET MTU Size
+	void *priv;
+	void *ops; /*	data plane */
+};
+
 struct nic_io_ops {
-	int (*linkoutput)(struct netif *netif, struct pbuf *buf);
-	int (*input)(pbuf *buf, int buf_len);
-	int (*output)(struct netif *netif, struct pbuf *q, const ip4_addr_t *ipaddr);
-	int (*output_ipv6)(struct netif * netif, struct pbuf * p, const ip6_addr_t * ipaddr);
-	int (*igmp_mac_filter)(struct netif * netif, const ip4_addr_t * group, enum netif_mac_filter_action action);
+	int (*linkoutput)(struct netdev *dev, uint8_t *data, uint16_t len);
+	int (*igmp_mac_filter)(struct netdev *netif, const struct in_addr *group, netdev_mac_filter_action action);
 };
 
 struct netdev_config {
-	struct nic_io_ops ops;
+	struct nic_io_ops *ops;
 	int flag;
 	int mtu;
 	int hwaddr_len;
+	uint8_t hwaddr[NM_MAX_HWADDR_LEN];
 	/*	Device address */
-	struct sockaddr addr; // ipv6, ipv4
-	struct sockaddr netmask;
-	struct sockaddr gw;
-	struct sockaddr_storage addr6; // ipv6, ipv4
-	struct sockaddr_storage netmask6;
-	struct sockaddr_storage gw6;
+	/* struct sockaddr addr; // ipv6, ipv4 */
+	/* struct sockaddr netmask; */
+	/* struct sockaddr gw; */
+	/* struct sockaddr_storage addr6; // ipv6, ipv4 */
+	/* struct sockaddr_storage netmask6; */
+	/* struct sockaddr_storage gw6; */
 
 	int is_default;
 	union {
@@ -60,17 +102,29 @@ struct netdev_config {
 	} t_ops;
 	netdev_type type;
 
-	int (*d_ioctl)(struct netdev *dev, int cmd, unsigned long arg);
+	int (*d_ioctl)(struct netdev *dev, int cmd, unsigned long arg); // SIOCSMIIREG
 	void *priv;
 };
 
 /**
  * Public API
+ *
+ * Desc: provide these APIs to vendors who are poring NIC
  */
 /*
  * desc: register a network device
  * return: return netif registered
  */
-struct netdev *register_netdev(struct netdev_config *config);
+struct netdev *netdev_register(struct netdev_config *config);
+int netdev_start(struct netdev *dev);
+int netdev_set_hwaddr(struct netdev *dev, uint8_t *hwaddr, uint8_t hwaddr_len);
+int netdev_get_hwaddr(struct netdev *dev, uint8_t *hwaddr, uint8_t *hwaddr_len);
+int netdev_input(struct netdev *dev, uint8_t *data, uint16_t len);
+int netdev_get_mtu(struct netdev *dev, int *mtu);
+
+// return address of hwaddr
+// this function is provided to support slsi driver which is implemented before netmgr is appear.
+// this function should not be used to new devices
+uint8_t *netdev_get_hwaddr_ptr(struct netdev *dev);
 
 #endif // __TIZENRT_NETMGR_H__

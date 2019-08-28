@@ -55,8 +55,6 @@
  * packet buffers, ...). All these pools are managed here.
  */
 
-#include <netdb.h>
-
 #include <net/lwip/opt.h>
 #include <net/lwip/debug.h>
 #include <net/lwip/memp.h>
@@ -75,6 +73,7 @@
 #include <net/lwip/igmp.h>
 #include <net/lwip/timeouts.h>
 #include <net/lwip/netif/etharp.h>
+#include <net/lwip/netdb.h>
 
 /* needed by default MEMP_NUM_SYS_TIMEOUT */
 #include <net/lwip/netif/ppp/ppp_opts.h>

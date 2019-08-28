@@ -77,10 +77,13 @@
  */
 
 #include <inttypes.h>
-
-#include <net/lwip/netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+
+#if CONFIG_NET_LWIP
+#include <net/lwip/netdb.h>
+#include <tinyara/net/stack_ioctl.h>
+#endif
 
  /****************************************************************************
  * Public Types
@@ -123,39 +126,7 @@ struct servent_data {
 	char *line;
 };
 
-#if CONFIG_NET_LWIP
-typedef enum {
-	GETADDRINFO,
-	FREEADDRINFO,
-	GETHOSTBYNAME,
-	GETNAMEINFO,
-	DNSSETSERVER,
-	DHCPCSTART,
-	DHCPCSTOP,
-	DHCPDSTART,
-	DHCPDSTOP,
-	DHCPDSTATUS,
-} req_type;
 
-/* To send a request to lwip stack by ioctl() use */
-struct req_lwip_data {
-	req_type type;
-	int req_res;
-	const char *host_name;
-	const char *serv_name;
-	const struct addrinfo *ai_hint;
-	struct addrinfo *ai_res;
-	struct addrinfo *ai;
-	struct hostent *host_entry;
-	const struct sockaddr *sa;
-	size_t sa_len;
-	size_t host_len;
-	size_t serv_len;
-	int flags;
-	u8_t num_dns;
-	ip_addr_t *dns_server;
-};
-#endif
 
 /****************************************************************************
  * Public Data

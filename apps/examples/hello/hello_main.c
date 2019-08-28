@@ -56,11 +56,11 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
-
+#include <stdlib.h>
 /****************************************************************************
  * hello_main
  ****************************************************************************/
-
+int g_scan_sleep = 0;
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -68,5 +68,8 @@ int hello_main(int argc, char *argv[])
 #endif
 {
 	printf("Hello, World!!\n");
+	if (argc == 2) {
+		g_scan_sleep = atoi(argv[1]);
+	}
 	return 0;
 }

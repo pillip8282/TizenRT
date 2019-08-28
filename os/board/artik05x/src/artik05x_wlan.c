@@ -53,11 +53,11 @@ struct netif *wlan_netif;
  */
 static err_t wlan_init(struct netif *netif)
 {
-	netif->name[0] = 'w';
-	netif->name[1] = 'l';
+	/* netif->name[0] = 'w'; */
+	/* netif->name[1] = 'l'; */
 
-	snprintf(netif->d_ifname, IFNAMSIZ, "wl%d", netif->num);
-	netif->flags = NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_BROADCAST | NETIF_FLAG_IGMP;
+	/* snprintf(netif->d_ifname, IFNAMSIZ, "wl%d", netif->num); */
+	/* netif->flags = NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_BROADCAST | NETIF_FLAG_IGMP; */
 
 	return ERR_OK;
 }

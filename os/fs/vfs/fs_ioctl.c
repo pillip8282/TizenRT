@@ -63,6 +63,7 @@
 
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
 #include <net/if.h>
+#include <tinyara/net/net_vfs.h>
 #endif
 
 #include "inode/inode.h"
@@ -121,7 +122,7 @@ int ioctl(int fd, int req, unsigned long arg)
 
 #if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
 		if ((unsigned int)fd < (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)) {
-			return netdev_ioctl(fd, req, arg);
+			return net_ioctl(fd, req, arg);
 		} else
 #endif
 		{
