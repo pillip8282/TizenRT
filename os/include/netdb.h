@@ -82,7 +82,7 @@
 
 #if CONFIG_NET_LWIP
 #include <net/lwip/netdb.h>
-#include <tinyara/net/stack_ioctl.h>
+// pkbuild #include <tinyara/net/stack_ioctl.h>
 #endif
 
  /****************************************************************************

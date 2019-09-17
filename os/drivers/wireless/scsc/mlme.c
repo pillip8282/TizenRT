@@ -972,12 +972,12 @@ static inline int slsi_set_scan_params(struct netdev *dev, u16 scan_id, u16 scan
 	u8 i;
 	struct wpa_driver_scan_ssid *pssid = ssids;
 
-	u8 d_mac[6];
-	netdev_get_hwaddr(dev, d_mac, NULL);
+	// pkbuild u8 d_mac[6];
+	// netdev_get_hwaddr(dev, d_mac, NULL);
 	fapi_set_u16(req, u.mlme_add_scan_req.scan_id, scan_id);
 	fapi_set_u16(req, u.mlme_add_scan_req.scan_type, scan_type);
 	fapi_set_u16(req, u.mlme_add_scan_req.report_mode_bitmap, report_mode);
-	fapi_set_memcpy(req, u.mlme_add_scan_req.device_address, d_mac);
+	fapi_set_memcpy(req, u.mlme_add_scan_req.device_address, netdev_get_hwaddr_ptr(dev));
 
 	for (i = 0; i < num_ssids; i++, pssid++) {
 		p = fapi_append_data(req, NULL, 2 + pssid->ssid_len);
@@ -1026,11 +1026,11 @@ int slsi_mlme_add_scan(struct slsi_dev *sdev, struct netdev *dev, u16 scan_type,
 		SLSI_NET_WARN(dev, "not supported in WlanLite mode\n");
 		return -EOPNOTSUPP;
 	}
-
-	// pkbuild d_mac is not pointer so it has a value always
-	/* if (WARN_ON(!(dev->d_mac.ether_addr_octet))) { */
-	/* 	return -EINVAL; */
-	/* } */
+#ifndef CONFIG_NET_NETMGR
+	if (WARN_ON(!netdev_get_hwaddr_ptr(dev))) {
+		return -EINVAL;
+	}
+#endif
 
 	WARN_ON(!SLSI_MUTEX_IS_LOCKED(ndev_vif->scan_mutex));
 	SLSI_NET_DBG3(dev, SLSI_MLME, "id:0x%x, n_channels:%d\n", (ndev_vif->ifnum << 8 | SLSI_SCAN_HW_ID), n_channels);
@@ -1466,9 +1466,7 @@ int slsi_mlme_start(struct slsi_dev *sdev, struct netdev *dev, u8 *bssid, struct
 		}
 	}
 
-	u8 d_mac[6];
-	netdev_get_hwaddr(dev, d_mac, NULL);
-	fapi_set_memcpy(req, u.mlme_start_req.bssid, d_mac);
+	fapi_set_memcpy(req, u.mlme_start_req.bssid, netdev_get_hwaddr_ptr(dev));
 	fapi_set_u16(req, u.mlme_start_req.beacon_period, settings->beacon_int);
 	fapi_set_u16(req, u.mlme_start_req.dtim_period, settings->dtim_period);
 	fapi_set_u16(req, u.mlme_start_req.capability_information, le16_to_cpu(mgmt->u.beacon.capab_info));
@@ -2031,7 +2029,9 @@ void slsi_mlme_connect_resp(struct slsi_dev *sdev, struct netdev *dev)
 
 	cfm = slsi_mlme_req_no_cfm(sdev, dev, req);
 	WARN_ON(cfm);
-	// pkbuild netif_set_link_up(dev);
+#ifndef CONFIG_NET_NETMGR
+	netif_set_link_up(dev);
+#endif
 }
 
 void slsi_mlme_connected_resp(struct slsi_dev *sdev, struct netdev *dev, u16 peer_index)

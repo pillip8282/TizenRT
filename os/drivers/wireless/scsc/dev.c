@@ -16,7 +16,6 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
-//pkbuild #include <tinyara/lwnl/slsi_drv.h>
 #include <stdbool.h>
 
 #include "dev.h"

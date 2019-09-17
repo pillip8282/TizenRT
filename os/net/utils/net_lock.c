@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2019 Samsung Electronics All Rights Reserved.
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,11 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+
 /****************************************************************************
+ * net/utils/net_lock.c
  *
- *   Copyright (C) 2007, 2009-2014 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011-2012, 2014-2015 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,171 +51,218 @@
  *
  ****************************************************************************/
 
-#ifndef _NET_VFS_H__
-#define _NET_VFS_H__
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <stdarg.h>
 
-struct socket {
-	// stack independent socket
-	/* sockets currently are built on netconns,
-	 * each socket has one netconn */
-	void *sock;
-};
+#include <unistd.h>
+#include <semaphore.h>
+#include <assert.h>
+#include <errno.h>
+#include <debug.h>
 
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-struct socketlist {
-	sem_t sl_sem;				/* Manage access to the socket list */
-	struct socket sl_sockets[CONFIG_NSOCKET_DESCRIPTORS];
-};
-#endif
+#include <tinyara/arch.h>
+#include <tinyara/net/net.h>
+
+#include "utils/utils.h"
+
+#ifdef CONFIG_NET
 
 /****************************************************************************
- * Function: net_close
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define NO_HOLDER (pid_t)-1
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+static sem_t g_netlock;
+static pid_t g_holder = NO_HOLDER;
+static unsigned int g_count = 0;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Function: _net_takesem
  *
  * Description:
- *   Performs the close operation on socket descriptors
- *
- * Parameters:
- *   sockfd   Socket descriptor of socket
- *
- * Returned Value:
- *   0 on success; -1 on error with errno set appropriately.
- *
- * Assumptions:
+ *   Take the semaphore
  *
  ****************************************************************************/
-int net_close(int sockfd);
+
+static void _net_takesem(void)
+{
+	while (sem_wait(&g_netlock) != 0) {
+		/* The only case that an error should occur here is if the wait was
+		 * awakened by a signal.
+		 */
+
+		ASSERT(errno == EINTR);
+	}
+}
 
 /****************************************************************************
- * Name: net_checksd
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Function: net_lockinitialize
  *
  * Description:
- *   Check if the socket descriptor is valid for the provided TCB and if it
- *   supports the requested access.  This trivial operation is part of the
- *   fdopen() operation when the fdopen() is performed on a socket descriptor.
- *   It simply performs some sanity checking before permitting the socket
- *   descriptor to be wrapped as a C FILE stream.
+ *   Initialize the locking facility
  *
  ****************************************************************************/
-int net_checksd(int sd, int oflags);
+
+void net_lockinitialize(void)
+{
+	sem_init(&g_netlock, 0, 1);
+}
 
 /****************************************************************************
- * Function: net_clone
+ * Function: net_lock
  *
  * Description:
- *   Performs the low level, common portion of net_dupsd() and net_dupsd2()
+ *   Take the lock
  *
  ****************************************************************************/
-int net_clone(struct socket *sock1, struct socket *sock2);
+
+net_lock_t net_lock(void)
+{
+	pid_t me = getpid();
+
+	/* Does this thread already hold the semaphore? */
+
+	if (g_holder == me) {
+		/* Yes.. just increment the reference count */
+
+		g_count++;
+	} else {
+		/* No.. take the semaphore (perhaps waiting) */
+
+		_net_takesem();
+
+		/* Now this thread holds the semaphore */
+
+		g_holder = me;
+		g_count = 1;
+	}
+
+	return 0;
+}
 
 /****************************************************************************
- * Function: net_dupsd
+ * Function: net_unlock
  *
  * Description:
- *   Clone a socket descriptor to an arbitray descriptor number.  If file
- *   descriptors are implemented, then this is called by dup() for the case
- *   of socket file descriptors.  If file descriptors are not implemented,
- *   then this function IS dup().
+ *   Release the lock.
  *
  ****************************************************************************/
-int net_dupsd(int sockfd);
+
+void net_unlock(net_lock_t flags)
+{
+	DEBUGASSERT(g_holder == getpid() && g_count > 0);
+
+	/* If the count would go to zero, then release the semaphore */
+
+	if (g_count == 1) {
+		/* We no longer hold the semaphore */
+
+		g_holder = NO_HOLDER;
+		g_count = 0;
+		sem_post(&g_netlock);
+	} else {
+		/* We still hold the semaphore. Just decrement the count */
+
+		g_count--;
+	}
+}
 
 /****************************************************************************
- * Function: net_dupsd2
+ * Function: net_timedwait
  *
  * Description:
- *   Clone a socket descriptor to an arbitray descriptor number.  If file
- *   descriptors are implemented, then this is called by dup2() for the case
- *   of socket file descriptors.  If file descriptors are not implemented,
- *   then this function IS dup2().
- *
- ****************************************************************************/
-int net_dupsd2(int sockfd1, int sockfd2);
-
-/****************************************************************************
- * Name: netdev_ioctl
- *
- * Description:
- *   Perform network device specific operations.
- *
- * Parameters:
- *   sockfd   Socket descriptor of device
-p *   cmd      The ioctl command
- *   arg      The argument of the ioctl cmd
- *
- * Return:
- *   >=0 on success (positive non-zero values are cmd-specific)
- *   On a failure, -1 is returned with errno set appropriately
- *
- *   EBADF
- *     'sockfd' is not a valid descriptor.
- *   EFAULT
- *     'arg' references an inaccessible memory area.
- *   ENOTTY
- *     'cmd' not valid.
- *   EINVAL
- *     'arg' is not valid.
- *   ENOTTY
- *     'sockfd' is not associated with a network device.
- *   ENOTTY
- *      The specified request does not apply to the kind of object that the
- *      descriptor 'sockfd' references.
- *
- ****************************************************************************/
-int net_ioctl(int sockfd, int cmd, unsigned long arg);
-
-/****************************************************************************
- * Name: net_vfcntl
- *
- * Description:
- *   Performs fcntl operations on socket
+ *   Atomically wait for sem (or a timeout( while temporarily releasing
+ *   the lock on the network.
  *
  * Input Parameters:
- *   sockfd - Socket descriptor of the socket to operate on
- *   cmd    - The fcntl command.
- *   ap     - Command-specific arguments
+ *   sem     - A reference to the semaphore to be taken.
+ *   abstime - The absolute time to wait until a timeout is declared.
  *
- * Returned Value:
- *   Zero (OK) is returned on success; -1 (ERROR) is returned on failure and
- *   the errno value is set appropriately.
+ * Returned value:
+ *   The returned value is the same as sem_wait() or sem_timedwait():  Zero
+ *   (OK) is returned on success; -1 (ERROR) is returned on a failure with
+ *   the errno value set appropriately.
  *
  ****************************************************************************/
-int net_vfcntl(int sockfd, int cmd, va_list ap);
+
+int net_timedwait(sem_t *sem, FAR const struct timespec *abstime)
+{
+	pid_t me = getpid();
+	unsigned int count;
+	irqstate_t flags;
+	int ret;
+
+	flags = irqsave();			/* No interrupts */
+	sched_lock();				/* No context switches */
+	if (g_holder == me) {
+		/* Release the network lock, remembering my count */
+
+		count = g_count;
+		g_holder = NO_HOLDER;
+		g_count = 0;
+		sem_post(&g_netlock);
+
+		/* Now take the semaphore, waiting if so requested. */
+
+		if (abstime) {
+			/* Wait until we get the lock or until the timeout expires */
+
+			ret = sem_timedwait(sem, abstime);
+		} else {
+			/* Wait as long as necessary to get the lot */
+
+			ret = sem_wait(sem);
+		}
+
+		/* Recover the network lock at the proper count */
+
+		_net_takesem();
+		g_holder = me;
+		g_count = count;
+	} else {
+		ret = sem_wait(sem);
+	}
+
+	sched_unlock();
+	irqrestore(flags);
+	return ret;
+}
 
 /****************************************************************************
- * Name: net_initlist
+ * Function: net_lockedwait
  *
  * Description:
- *   Initialize a list of sockets for a new task
+ *   Atomically wait for sem while temporarily releasing g_netlock.
  *
  * Input Parameters:
- *   list -- A reference to the pre-allocated socket list to be initialized.
+ *   sem - A reference to the semaphore to be taken.
  *
- * Returned Value:
- *   None
+ * Returned value:
+ *   The returned value is the same as sem_wait():  Zero (OK) is returned
+ *   on success; -1 (ERROR) is returned on a failure with the errno value
+ *   set appropriately.
  *
  ****************************************************************************/
 
-void net_initlist(FAR struct socketlist *list);
+int net_lockedwait(sem_t *sem)
+{
+	return net_timedwait(sem, NULL);
+}
 
-
-/****************************************************************************
- * Name: net_releaselist
- *
-p * Description:
- *   Release resources held by the socket list
- *
- * Input Parameters:
- *   list -- A reference to the pre-allocated socket list to be un-initialized.
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void net_releaselist(FAR struct socketlist *list);
-
-#endif // _NET_VFS_H__
-
+#endif							/* CONFIG_NET */

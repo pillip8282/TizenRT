@@ -170,3 +170,8 @@ endmenu #menu "Network utilities"
 
 endif # NET
 
+config NET_NETMGR
+	bool "Network manager"
+	default n
+	---help---
+		network refactoring

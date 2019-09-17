@@ -87,14 +87,7 @@ struct netdev_config {
 	int mtu;
 	int hwaddr_len;
 	uint8_t hwaddr[NM_MAX_HWADDR_LEN];
-	/*	Device address */
-	/* struct sockaddr addr; // ipv6, ipv4 */
-	/* struct sockaddr netmask; */
-	/* struct sockaddr gw; */
-	/* struct sockaddr_storage addr6; // ipv6, ipv4 */
-	/* struct sockaddr_storage netmask6; */
-	/* struct sockaddr_storage gw6; */
-
+	
 	int is_default;
 	union {
 		struct ethernet_ops eth;

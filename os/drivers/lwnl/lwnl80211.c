@@ -176,11 +176,8 @@ errout:
 static ssize_t lwnl80211_read(struct file *filep, char *buffer, size_t len)
 {
 	LWNL80211_ENTER;
-	/* struct inode *inode = filep->f_inode; */
-	/* struct lwnl80211_upperhalf_s *upper = inode->i_private; */
 	int res = lwnl_get_event(filep, buffer, len);
-
-
+	// todo_net : convert res to vfs error style?
 	LWNL80211_LEAVE;
 	return res;
 }
@@ -189,10 +186,14 @@ static ssize_t lwnl80211_read(struct file *filep, char *buffer, size_t len)
 static ssize_t lwnl80211_write(struct file *filep, const char *buffer, size_t len)
 {
 	LWNL80211_ENTER;
-
+	// todo_net
+	LWNL80211_LEAVE;
 	return OK;
 }
 
+#ifndef CONFIG_NET_NETMGR
+extern int lwnl_ioctl(struct lwnl80211_lowerhalf_s* lower, int cmd, void *arg);
+#endif
 
 static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
@@ -207,9 +208,11 @@ static int lwnl80211_ioctl(struct file *filep, int cmd, unsigned long arg)
 		LWNL80211_ERR;
 		return ret;
 	}
-
+#ifdef CONFIG_NET_NETMGR
 	ret = netdev_lwnlioctl(cmd, arg);
-
+#else
+	ret = lwnl_ioctl((struct lwnl80211_lowerhalf_s*)upper->lower, cmd, arg);
+#endif
 	sem_post(&upper->exclsem);
 	LWNL80211_LEAVE;
 

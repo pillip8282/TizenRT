@@ -248,6 +248,9 @@ struct lwnl80211_ops {
 struct lwnl80211_upperhalf_s;
 struct lwnl80211_lowerhalf_s {
 	struct lwnl80211_upperhalf_s *parent;
+#ifndef CONFIG_NET_NETMGR
+	struct lwnl80211_ops *ops;
+#endif
 };
 
 /****************************************************************************

@@ -90,10 +90,12 @@ struct eth_hdr_s {
 	uint16_t type;				/* Type code (2 bytes) */
 };
 
+#ifndef CONFIG_NET_NETMGR
 struct ethernet_ops {
 	int (*init)(struct netdev *dev);
 	int (*deinit)(struct netdev *dev);
 };
+#endif
 
 /****************************************************************************
  * Public Data

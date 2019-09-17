@@ -52,7 +52,6 @@
 #ifndef LITTLE_ENDIAN
 #define LITTLE_ENDIAN 1234
 #endif
-
 #ifndef BIG_ENDIAN
 #define BIG_ENDIAN 4321
 #endif
@@ -108,6 +107,7 @@
 #endif
 
 /* Define generic types used in lwIP */
+
 #if !LWIP_NO_STDINT_H
 #include <stdint.h>
 typedef uint8_t u8_t;

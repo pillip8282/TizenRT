@@ -683,3 +683,34 @@ lwnl80211_result_e slsidrv_set_autoconnect(struct netdev *dev, uint8_t check)
 	}
 	return result;
 }
+
+#ifndef CONFIG_NET_NETMGR
+static struct lwnl80211_ops g_slsi_ops = {
+    slsidrv_init,
+    slsidrv_deinit,
+    slsidrv_scan_ap,
+    slsidrv_connect_ap,
+    slsidrv_disconnect_ap,
+    slsidrv_get_info,
+	slsidrv_start_sta,
+    slsidrv_start_softap,
+    slsidrv_stop_softap,
+    slsidrv_set_autoconnect,
+	NULL
+};
+
+static struct lwnl80211_lowerhalf_s g_slsi_lower = {
+	NULL,
+	&g_slsi_ops
+};
+
+int slsi_drv_initialize(void)
+{
+	int res = lwnl80211_register(&g_slsi_lower);
+	if (res < 0) {
+		ndbg("registering slsi driver to lwnl is fail");
+		return -1;
+	}
+	return 0;
+}
+#endif

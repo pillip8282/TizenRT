@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/net/netdev_mgr.h>
+#include <tinyara/netmgr/netdev_mgr.h>
 #include <debug.h>
 #include <semaphore.h>
 #include "netdev_mgr_internal.h"

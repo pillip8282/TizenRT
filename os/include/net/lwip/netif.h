@@ -367,6 +367,34 @@ struct netif {
 #endif							/* LWIP_LOOPBACK_MAX_PBUFS */
 #endif							/* ENABLE_LOOPBACK */
 
+#ifndef CONFIG_NET_NETMGR
+	char d_ifname[6];
+#if CONFIG_NSOCKET_DESCRIPTORS > 0
+	struct netif *flink;
+#endif
+	struct ether_addr d_mac;	/* Device MAC address */
+
+	u16_t d_len;
+	u32_t d_flags;
+	uint32_t d_ipaddr;		/* Host IPv4 address assigned to the network interface */
+	uint32_t d_draddr;		/* Default router IP address */
+	uint32_t d_netmask;		/* Network subnet mask */
+	/* Driver callbacks */
+	int (*d_ifup) (FAR struct netif * dev);
+	int (*d_ifdown) (FAR struct netif * dev);
+	int (*d_ifstate) (FAR struct netif * dev);
+	int (*d_txavail) (FAR struct netif * dev);
+	int (*d_txpoll) (FAR struct netif * dev);
+	/* Drivers may attached device-specific, private information */
+	void *d_private;
+#ifdef CONFIG_NET_MULTIBUFFER
+	u8_t *d_buf;
+#else
+	u8_t d_buf[MAX_NET_DEV_MTU + CONFIG_NET_GUARDSIZE];
+#endif
+	void *priv
+#endif // CONFIG_NET_NETMGR
+
 #if LWIP_DHCPS
 	struct udp_pcb *dhcps_pcb;
 #endif
@@ -380,6 +408,14 @@ struct netif {
 #define NETIF_SET_CHECKSUM_CTRL(netif, chksumflags)
 #define IF__NETIF_CHECKSUM_ENABLED(netif, chksumflag)
 #endif							/* LWIP_CHECKSUM_CTRL_PER_NETIF */
+
+#ifndef CONFIG_NET_NETMGR
+#if CONFIG_NSOCKET_DESCRIPTORS > 0
+#if CONFIG_NET_LWIP
+extern struct netif *g_netdevices;
+#endif
+#endif
+#endif // CONFIG_NET_NETMGR
 
 /** The list of network interfaces. */
 extern struct netif *netif_list;

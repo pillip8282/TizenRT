@@ -65,7 +65,11 @@
 #include  <tinyara/compiler.h>
 #include  <tinyara/sched.h>
 #include  <tinyara/fs/fs.h>
-#include  <tinyara/net/netmgr.h>
+#ifdef CONFIG_NET_NETMGR
+#include  <tinyara/netmgr/netmgr.h>
+#else
+#include <tinyara/net/net.h>
+#endif
 #include  <tinyara/lib.h>
 #include  <tinyara/mm/mm.h>
 #include  <tinyara/mm/shm.h>

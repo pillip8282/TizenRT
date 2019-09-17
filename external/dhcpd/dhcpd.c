@@ -71,6 +71,8 @@
 #define OK    (0)
 #else
 #include <tinyara/config.h>		/* TinyAra configuration */
+
+#include <sched.h>
 #include <debug.h>				/* For ndbg, vdbg */
 #include <tinyara/compiler.h>	/* For CONFIG_CPP_HAVE_WARNING */
 #include <arch/irq.h>			/* For irqstore() and friends -- REVISIT */

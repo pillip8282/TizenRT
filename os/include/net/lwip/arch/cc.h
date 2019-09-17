@@ -49,10 +49,10 @@
 #ifndef __CC_H__
 #define __CC_H__
 
-#include <assert.h>
-#include <debug.h>
-#include <stdio.h>
-#include <errno.h>
+//pkbuild #include <assert.h>
+//pkbuild #include <debug.h>
+//pkbuild #include <stdio.h>
+//pkbuild #include <errno.h>
 #include "cpu.h"
 
 typedef unsigned char u8_t;
@@ -103,7 +103,6 @@ typedef int sys_prot_t;
 #define PACK_STRUCT_FIELD(x) x
 
 #endif
-
 
 #ifndef LWIP_PLATFORM_DIAG
 #define LWIP_PLATFORM_DIAG(msg) do { lwipdbg msg; } while (0)

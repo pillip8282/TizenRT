@@ -24,10 +24,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-
 #include <netdb.h>
-
 #include <errno.h>
+#include <tinyara/netmgr/stack_ioctl.h>
 
 /****************************************************************************
  * Public Functions

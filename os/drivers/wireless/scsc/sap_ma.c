@@ -194,9 +194,7 @@ static int slsi_rx_data_process_mbuf(struct slsi_dev *sdev, struct netdev *dev, 
 	if (ndev_vif->vif_type == FAPI_VIFTYPE_STATION) {
 		ehdr = (struct ethhdr *)(slsi_mbuf_get_data(mbuf));
 
-		uint8_t d_mac[6];
-		netdev_get_hwaddr(dev, d_mac, NULL);
-		if (is_multicast_ether_addr(ehdr->h_dest) && !compare_ether_addr(ehdr->h_source, d_mac)) {
+		if (is_multicast_ether_addr(ehdr->h_dest) && !compare_ether_addr(ehdr->h_source, netdev_get_hwaddr_ptr(dev))) {
 			SLSI_NET_DBG2(dev, SLSI_RX, "drop locally generated multicast frame relayed back by AP\n");
 			slsi_kfree_mbuf(mbuf);
 			return -EINVAL;

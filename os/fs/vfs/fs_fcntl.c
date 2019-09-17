@@ -62,7 +62,11 @@
 #include <assert.h>
 
 #include <tinyara/fs/fs.h>
-#include <tinyara/net/net_vfs.h>
+#ifdef CONFIG_NET_NETMGR
+#include <tinyara/netmgr/net_vfs.h>
+#else
+#include <tinyara/net/net.h>
+#endif
 #include <tinyara/sched.h>
 #include <tinyara/cancelpt.h>
 

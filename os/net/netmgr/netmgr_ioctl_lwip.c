@@ -5,8 +5,8 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netdb.h>
-#include <tinyara/net/stack_ioctl.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/netmgr/stack_ioctl.h>
 
 #include <net/lwip/opt.h>
 #include <net/lwip/netdb.h>

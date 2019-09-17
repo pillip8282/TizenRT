@@ -263,9 +263,6 @@ struct netconn {
 	/* only used for socket layer */
 #if LWIP_SOCKET
 	int socket;
-	//struct socketlist *slist;
-	/* interoperability with tinyara network stack */
-	//int crefs;				/* for dup */
 #endif							/* LWIP_SOCKET */
 #if LWIP_SO_SNDTIMEO
 	/* timeout to wait for sending data (which means enqueueing data for sending

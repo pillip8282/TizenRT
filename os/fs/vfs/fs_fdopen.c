@@ -64,7 +64,11 @@
 
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
-#include <tinyara/net/net_vfs.h>
+#ifdef CONFIG_NET_NETMGR
+#include <tinyara/netmgr/net_vfs.h>
+#else
+#include <tinyara/net/net.h>
+#endif
 
 /****************************************************************************
  * Private Functions

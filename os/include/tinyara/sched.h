@@ -79,9 +79,6 @@
 #include <tinyara/irq.h>
 #include <tinyara/mm/shm.h>
 #include <tinyara/fs/fs.h>
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-#include <tinyara/net/net_vfs.h>
-#endif
 #include <arch/arch.h>
 
 /********************************************************************************
@@ -479,9 +476,8 @@ struct task_group_s {
 #endif
 #endif
 
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
+#if defined(CONFIG_NET_TASK_BIND)
 	/* Sockets ******************************************************************* */
-
 	struct socketlist tg_socketlist;	/* Maps socket descriptor to socket         */
 #endif
 

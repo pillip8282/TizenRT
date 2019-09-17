@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/net/netmgr.h>
+#include <tinyara/netmgr/netmgr.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/lwnl/lwnl80211.h>
 #include "netstack.h"

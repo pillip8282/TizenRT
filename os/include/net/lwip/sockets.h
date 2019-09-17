@@ -126,7 +126,37 @@ struct sockaddr_storage {
 typedef u32_t socklen_t;
 #endif
 
+#ifdef CONFIG_NET_NETMGR
 struct lwip_sock;
+#else
+/** This is overridable for the rare case where more than 255 threads
+ * select on the same socket...
+ */
+#ifndef SELWAIT_T
+#define SELWAIT_T u8_t
+#endif
+/** Contains all internal pointers and states used for a socket */
+struct lwip_sock {
+	/** sockets currently are built on netconns, each socket has one netconn */
+	struct netconn *conn;
+	/** data that was left from the previous read */
+	void *lastdata;
+	/** offset in the data that was left from the previous read */
+	u16_t lastoffset;
+	/** number of times data was received, set by event_callback(),
+	    tested by the receive and select functions */
+	s16_t rcvevent;
+	/** number of times data was ACKed (free send buffer), set by event_callback(),
+	    tested by select */
+	u16_t sendevent;
+	/** error happened for this socket, set by event_callback(), tested by select */
+	u16_t errevent;
+	/** last error that occurred on this socket (in fact, all our errnos fit into an u8_t) */
+	u8_t err;
+	/** counter of how many threads are waiting for this socket using select */
+	SELWAIT_T select_waiting;
+};
+#endif
 
 #if !LWIP_TCPIP_CORE_LOCKING
 /** Maximum optlen used by setsockopt/getsockopt */

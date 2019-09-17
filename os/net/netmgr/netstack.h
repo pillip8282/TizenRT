@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <net/route.h>
-#include <tinyara/net/net_vfs.h>
+#include <tinyara/netmgr/net_vfs.h>
 
 struct netstack_ops {
 	// start, stop

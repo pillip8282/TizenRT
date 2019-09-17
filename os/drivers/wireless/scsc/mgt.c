@@ -261,7 +261,9 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netdev *dev, bool hw_availab
 			bool already_disconnected = false;
 
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "Station active: hw_available=%d\n", hw_available);
-			// pkbuild netif_set_link_down(dev);
+#ifndef CONFIG_NET_NETMGR
+			netif_set_link_down(dev);
+#endif
 			if (hw_available) {
 				struct slsi_peer *peer = ndev_vif->peer_sta_record[SLSI_STA_PEER_QUEUESET];
 
@@ -282,7 +284,9 @@ void slsi_vif_cleanup(struct slsi_dev *sdev, struct netdev *dev, bool hw_availab
 			}
 		} else if (ndev_vif->vif_type == FAPI_VIFTYPE_AP) {
 			SLSI_DBG2(sdev, SLSI_INIT_DEINIT, "AP active\n");
-			// pkbuild netif_set_link_down(dev);
+#ifndef CONFIG_NET_NETMGR
+			netif_set_link_down(dev);
+#endif
 			if (hw_available) {
 				int r = 0;
 
@@ -912,8 +916,9 @@ int slsi_handle_disconnect(struct slsi_dev *sdev, struct netdev *dev, u8 *peer_a
 		ndev_vif->sta.is_wps = false;
 
 		/* Delayed ARP only needs to run when connected. */
-
-		// pkbuild netif_set_link_down(dev);
+#ifndef CONFIG_NET_NETMGR
+		netif_set_link_down(dev);
+#endif
 		slsi_mlme_del_vif(sdev, dev);
 		slsi_vif_deactivated(sdev, dev);
 		break;
@@ -1149,14 +1154,15 @@ int slsi_send_gratuitous_arp(struct slsi_dev *sdev, struct netdev *dev)
 	/* Ethernet Header */
 	ehdr = (struct ethhdr *)mbuf_put(arp, sizeof(struct ethhdr));
 	memset(ehdr->h_dest, 0xFF, ETH_ALEN);
-	u8 d_mac[6];
-	netdev_get_hwaddr(dev, d_mac, NULL);
-	SLSI_ETHER_COPY(ehdr->h_source, d_mac);
+	//pkbuild u8 d_mac[6];
+	//netdev_get_hwaddr(dev, d_mac, NULL);
+	//SLSI_ETHER_COPY(ehdr->h_source, d_mac);
+	SLSI_ETHER_COPY(ehdr->h_source, netdev_get_hwaddr_ptr(dev));
 	ehdr->h_proto = cpu_to_be16(ETH_P_ARP);
 
 	/* Arp Data */
 	memcpy(mbuf_put(arp, sizeof(arp_hdr)), arp_hdr, sizeof(arp_hdr));
-	SLSI_ETHER_COPY(mbuf_put(arp, ETH_ALEN), d_mac);
+	SLSI_ETHER_COPY(mbuf_put(arp, ETH_ALEN), netdev_get_hwaddr_ptr(dev));
 	memcpy(mbuf_put(arp, sizeof(ndev_vif->ipaddress)), &ndev_vif->ipaddress, sizeof(ndev_vif->ipaddress));
 	memset(mbuf_put(arp, ETH_ALEN), 0xFF, ETH_ALEN);
 	memcpy(mbuf_put(arp, sizeof(ndev_vif->ipaddress)), &ndev_vif->ipaddress, sizeof(ndev_vif->ipaddress));

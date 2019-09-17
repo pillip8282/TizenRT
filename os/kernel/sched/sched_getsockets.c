@@ -59,7 +59,7 @@
 #include <sched.h>
 #include "sched/sched.h"
 
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
+#if defined(CONFIG_NET_TASK_BIND)
 
 /************************************************************************
  * Private Functions

@@ -51,6 +51,7 @@
 
 /* arch.h might define NULL already */
 #include <net/lwip/arch.h>
+
 #include <net/lwip/opt.h>
 #if LWIP_PERF
 #include "arch/perf.h"

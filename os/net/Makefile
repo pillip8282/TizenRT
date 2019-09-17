@@ -58,7 +58,11 @@ ifeq ($(CONFIG_NET),y)
 # Basic networking support
 
 NET_ASRCS   =
+ifeq ($(CONFIG_NET_NETMGR),y)
 NET_CSRCS   =
+else
+NET_CSRCS   = net_initialize.c
+endif
 
 #LWIP stack support
 
@@ -81,9 +85,15 @@ BLUETOOTH_CSRCS =
 VPATH =
 DEPPATH = --dep-path .
 
+ifeq ($(CONFIG_NET_NETMGR),y)
 include netmgr/Make.defs
-# pkbuild include mac/Make.defs
-# pkbuild include socket/Make.defs
+else
+include netdev/Make.defs
+include mac/Make.defs
+include socket/Make.defs
+include utils/Make.defs
+endif
+
 ifeq ($(CONFIG_BLUETOOTH),y)
 include bluetooth/Make.defs
 include bluetooth/iob/Make.defs
@@ -104,8 +114,6 @@ endif
 include lwip/src/netif/ppp/Make.defs
 include lwip/sys/arch/Make.defs
 endif
-
-# pkbuild include utils/Make.defs
 
 endif
 

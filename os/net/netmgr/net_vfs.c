@@ -57,7 +57,7 @@
 #include <errno.h>
 #include <debug.h>
 #include <net/if.h>
-#include <tinyara/net/net_vfs.h>
+#include <tinyara/netmgr/net_vfs.h>
 #include "netstack.h"
 
 /****************************************************************************

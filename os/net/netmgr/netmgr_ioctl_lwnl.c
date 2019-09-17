@@ -42,15 +42,6 @@ int netdev_lwnlioctl(int cmd, void *arg)
 		if (*res != 0) {
 			ret = -ENOSYS;
 		}
-		/* *res = ND_NETOPS(dev, ifup)(dev); */
-		/* if (*res != 0) { */
-		/* 	ret = -ENOSYS; */
-		/* 	break; */
-		/* } */
-		/* *res = dev->t_ops.wl.init(dev); */
-		/* if (*res != LWNL80211_SUCCESS) { */
-		/* 	ret = -ENOSYS; */
-		/* } */
 	}
 	break;
 	case LWNL80211_DEINIT:
@@ -59,16 +50,6 @@ int netdev_lwnlioctl(int cmd, void *arg)
 		if (*res != 0) {
 			ret = -ENOSYS;
 		}
-
-		/* *res = ND_NETOPS(dev, ifdown)(dev); */
-		/* if (*res != 0) { */
-		/* 	ret = -ENOSYS; */
-		/* 	break; */
-		/* } */
-		/* *res = dev->t_ops.wl.deinit(dev); */
-		/* if (*res != LWNL80211_SUCCESS) { */
-		/* 	ret = -ENOSYS; */
-		/* } */
 	}
 	break;
 	case LWNL80211_GET_INFO:

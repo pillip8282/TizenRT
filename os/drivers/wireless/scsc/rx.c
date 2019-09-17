@@ -26,12 +26,11 @@
 #include "t20_ops.h"
 
 extern void l2_packet_receive(void *ctx, const u8 *src_addr, u8 *ptr, u16 len);
-extern int g_scan_sleep; // pkbuild
+
 void slsi_rx_scan_ind(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf)
 {
 	u16 scan_id = fapi_get_u16(mbuf, u.mlme_scan_ind.scan_id);
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
-	ndbg("[pkbuild]scan ind "SLSI_MAC_FORMAT"\n", SLSI_MAC_STR(fapi_get_mgmt(mbuf)->bssid));
 	SLSI_NET_DBG3(dev, SLSI_MLME, "mlme_scan_ind(interface:%d, scan_id:%d (%#x)) bssid: " SLSI_MAC_FORMAT "\n", ndev_vif->ifnum, scan_id, scan_id, SLSI_MAC_STR(fapi_get_mgmt(mbuf)->bssid));
 
 	scan_id = (scan_id & 0xFF);
@@ -49,7 +48,6 @@ void slsi_rx_scan_ind(struct slsi_dev *sdev, struct netdev *dev, struct max_buff
 
 	/* NOTE: No locking needed here. */
 	slsi_mbuf_queue_tail(&ndev_vif->scan[scan_id].scan_results, mbuf);
-	sleep(g_scan_sleep); // pkbuidl temporary 
 }
 
 void slsi_rx_scan_done_ind(struct slsi_dev *sdev, struct netdev *dev, struct max_buff *mbuf)
@@ -57,7 +55,6 @@ void slsi_rx_scan_done_ind(struct slsi_dev *sdev, struct netdev *dev, struct max
 	u16 scan_id = fapi_get_u16(mbuf, u.mlme_scan_done_ind.scan_id);
 	struct netdev_vif *ndev_vif = netdev_priv(dev);
 
-	ndbg("[pkbuild] scan done\n");
 	SLSI_NET_DBG3(dev, SLSI_MLME, "slsi_rx_scan_done_ind\n");
 
 	SLSI_MUTEX_LOCK(ndev_vif->vif_mutex);
@@ -765,7 +762,11 @@ else
 
 		/* test for an overlength frame */
 		int mtu = 0;
+#ifdef CONFIG_NET_NETMGR
 		(void)netdev_get_mtu(dev, &mtu);
+#else
+		mtu = dev->mtu;
+#endif
 		if (mbuf->data_len > (mtu + ETH_HLEN)) {
 			/* A bogus length ethfrm has been encap'd. */
 			/* Is someone trying an oflow attack? */
@@ -776,8 +777,10 @@ else
 
 		SLSI_MUTEX_UNLOCK(ndev_vif->vif_mutex);
 		SLSI_DBG3(sdev, SLSI_RX, "pass %u bytes to local stack\n", mbuf->data_len);
-		// pkbuild dev->d_buf = slsi_mbuf_get_data(mbuf);
-		//dev->d_len = mbuf->data_len;
+#ifndef CONFIG_NET_NETMGR
+		dev->d_buf = slsi_mbuf_get_data(mbuf);
+		dev->d_len = mbuf->data_len;
+#endif
 
 		if (ntohs(ehdr->h_proto) == ETH_P_PAE) {
 			SLSI_INCR_DATA_PATH_STATS(sdev->dp_stats.rx_num_eapol);

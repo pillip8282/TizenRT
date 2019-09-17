@@ -2,7 +2,7 @@
 #define __TIZENRT_NETDEV_MGR_INTERNAL_H__
 
 #include <stdint.h>
-#include <tinyara/net/netdev_mgr.h>
+#include <tinyara/netmgr/netdev_mgr.h>
 
 #ifdef CONFIG_NET_LWIP
 // pkbuild todo: lwip code should be removed.

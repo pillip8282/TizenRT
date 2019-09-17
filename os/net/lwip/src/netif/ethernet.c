@@ -197,7 +197,9 @@ err_t ethernet_input(struct pbuf *p, struct netif *netif)
 			goto free_and_return;
 		} else {
 			/* pass to IP layer */
-			//MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#ifndef CONFIG_NET_NETMGR
+			MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#endif
 			MIB2_STATS_NETIF_INC(netif, ifinucastpkts);
 			ip4_input(p, netif);
 		}
@@ -217,7 +219,9 @@ err_t ethernet_input(struct pbuf *p, struct netif *netif)
 			goto free_and_return;
 		} else {
 			/* pass p to ARP module */
-			//MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#ifndef CONFIG_NET_NETMGR
+			MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#endif
 			MIB2_STATS_NETIF_INC(netif, ifinnucastpkts);
 			etharp_input(p, netif);
 		}
@@ -225,13 +229,17 @@ err_t ethernet_input(struct pbuf *p, struct netif *netif)
 #endif							/* LWIP_IPV4 && LWIP_ARP */
 #if PPPOE_SUPPORT
 	case PP_HTONS(ETHTYPE_PPPOEDISC):	/* PPP Over Ethernet Discovery Stage */
-		//MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#ifndef CONFIG_NET_NETMGR
+		MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#endif
 		MIB2_STATS_NETIF_INC(netif, ifinnucastpkts);
 		pppoe_disc_input(netif, p);
 		break;
 
 	case PP_HTONS(ETHTYPE_PPPOE):	/* PPP Over Ethernet Session Stage */
-		//MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#ifndef CONFIG_NET_NETMGR
+		MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#endif
 		MIB2_STATS_NETIF_INC(netif, ifinnucastpkts);
 		pppoe_data_input(netif, p);
 		break;
@@ -246,7 +254,9 @@ err_t ethernet_input(struct pbuf *p, struct netif *netif)
 			goto free_and_return;
 		} else {
 			/* pass to IPv6 layer */
-			//MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#ifndef CONFIG_NET_NETMGR
+			MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#endif
 			MIB2_STATS_NETIF_INC(netif, ifinucastpkts);
 			ip6_input(p, netif);
 		}
@@ -270,7 +280,9 @@ err_t ethernet_input(struct pbuf *p, struct netif *netif)
 	return ERR_OK;
 
 free_and_return:
-	//MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#ifndef CONFIG_NET_NETMGR
+	MIB2_STATS_NETIF_ADD(netif, ifinoctets, netif->d_len);
+#endif
 	pbuf_free(p);
 	return ERR_OK;
 }
@@ -326,14 +338,18 @@ err_t ethernet_output(struct netif * netif, struct pbuf * p, const struct eth_ad
 	LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE, ("ethernet_output: sending packet %p\n", (void *)p));
 
 	/* send the packet */
-	//MIB2_STATS_NETIF_ADD(netif, ifoutoctets, netif->d_len);
+#ifndef CONFIG_NET_NETMGR
+	MIB2_STATS_NETIF_ADD(netif, ifoutoctets, netif->d_len);
+#endif
 	MIB2_STATS_NETIF_INC(netif, ifoutucastpkts);
 	return netif->linkoutput(netif, p);
 
 pbuf_header_failed:
 	LWIP_DEBUGF(ETHARP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_LEVEL_SERIOUS, ("ethernet_output: could not allocate room for header.\n"));
 	LINK_STATS_INC(link.lenerr);
-	//MIB2_STATS_NETIF_ADD(netif, ifoutoctets, netif->d_len);
+#ifndef CONFIG_NET_NETMGR
+	MIB2_STATS_NETIF_ADD(netif, ifoutoctets, netif->d_len);
+#endif
 	MIB2_STATS_NETIF_INC(netif, ifoutdiscards);
 	return ERR_BUF;
 }
