@@ -57,11 +57,10 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
+#include <tinyara/config.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -72,10 +71,8 @@
 #include <debug.h>
 #include <net/if.h>
 #include <arpa/inet.h>
-
 #include <protocols/dhcpc.h>
 #include <netutils/netlib.h>
-
 #if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
 #include <tinyara/net/dns.h>
 #endif
@@ -673,47 +670,10 @@ static int dhcpc_request(void *handle, struct dhcpc_state *presult)
 		 (presult->default_router.s_addr >> 24) & 0xff);
 	ndbg("Lease expires in %d seconds\n", presult->lease_time);
 
-#if defined CONFIG_NET_LWIP    // this is temporal fix. it should be modified later
-    ip_addr_t dns_addr;
-    IP_SET_TYPE_VAL(dns_addr, IPADDR_TYPE_V4);
-#ifdef CONFIG_NET_IPv6
-    dns_addr.u_addr.ip4.addr = presult->dnsaddr.s_addr;
-#else
-    dns_addr.addr = presult->dnsaddr.s_addr;
-#endif
-	struct req_lwip_data req;
-
-	int sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0) {
-		ndbg("dnsclient : socket() failed with errno: %d\n", errno);
-		return ERROR;
+	int res = netlib_set_ipv4_dns(&presult->dnsaddr);
+	if (res < 0) {
+		return res;
 	}
-
-	memset(&req, 0, sizeof(req));
-	req.type = DNSSETSERVER;
-	req.num_dns = 0;
-	req.dns_server = &dns_addr;
-
-	int ioctl_ret = ioctl(sock, SIOCLWIP, (unsigned long)&req);
-	if (ioctl_ret == ERROR) {
-		ndbg("dnsclient : ioctl() failed with errno: %d\n", errno);
-		close(sock);
-		return ioctl_ret;
-	}
-
-	close(sock);
-#endif /*  CONFIG_NET_LWIP */
-
-#if defined(CONFIG_NETDB_DNSCLIENT) && defined(CONFIG_NETDB_DNSSERVER_BY_DHCP)
-	struct sockaddr_in dns;
-	if (presult->dnsaddr.s_addr != 0) {
-		ndbg("Set DNS IP address via dns_add_nameserver\n");
-		dns.sin_addr.s_addr = presult->dnsaddr.s_addr;
-		dns.sin_family = AF_INET;
-		dns.sin_port  = htons(DNS_DEFAULT_PORT);
-		dns_add_nameserver((FAR struct sockaddr *)&dns, sizeof(struct sockaddr_in));
-	}
-#endif
 
 	return OK;
 }

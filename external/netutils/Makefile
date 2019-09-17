@@ -70,7 +70,8 @@ CSRCS += netlib_setipv4addr.c \
 	netlib_getipv4addr.c \
 	netlib_getdripv4addr.c \
 	netlib_setdripv4addr.c \
-	netlib_setipv4netmask.c
+	netlib_setipv4netmask.c\
+	netlib_setdnsaddr.c
 endif
 
 ifeq ($(CONFIG_NET_IPv6),y)
