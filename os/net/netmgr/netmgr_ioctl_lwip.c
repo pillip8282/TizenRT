@@ -275,8 +275,9 @@ static int _netdev_free_addrinfo(struct addrinfo *ai)
  ****************************************************************************/
 static int lwip_func_ioctl(int s, int cmd, void *arg)
 {
+	(void)cmd;
 	int ret = -EINVAL;
-	ndbg("Enter %d\n");
+
 	struct lwip_sock *sock = get_socket(s);
 	if (!sock) {
 		ret = -EBADF;
@@ -286,6 +287,8 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 	if (!req) {
 		goto errout;
 	}
+
+	ndbg("s(%d) type(%d)\n", s, req->type);
 
 #if LWIP_DNS
 	struct addrinfo *res = NULL;
