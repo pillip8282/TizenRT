@@ -24,13 +24,21 @@
 #define	WIFIMGR_MACADDR 0x04
 #define WIFIMGR_RSSI 0x08
 #define WIFIMGR_STATE 0X10
-#define WIFIMGR_ALL_INFO (WIFIMGR_SSID | WIFIMGR_SOFTAP_SSID | WIFIMGR_MACADDR | WIFIMGR_RSSI | WIFIMGR_STATE)
+#define WIFIMGR_BSSID 0x20
+
+#define WIFIMGR_ALL_INFO (WIFIMGR_SSID | WIFIMGR_SOFTAP_SSID | WIFIMGR_MACADDR | WIFIMGR_RSSI | WIFIMGR_STATE | WIFIMGR_BSSID)
 
 struct wifimgr_info_msg {
 	char *ssid;
 	char *softap_ssid;
 	char *mac_addr;
 	int rssi;
+	// In softAP mode, bssid is a mac address of joined device.
+	//                 num is the number of joined device (current system only supports a device).
+	// In STA mode, bssid is a mac address of AP
+	//                 num is used to check validity of bssid.(if num is 0 then bssid is invalid)
+	uint16_t num;
+	char bssid[WIFIMGR_MACADDR_LEN];
 	wifimgr_state_e state;
 };
 typedef struct wifimgr_info_msg wifimgr_info_msg_s;

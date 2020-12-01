@@ -195,6 +195,12 @@ typedef struct {
 	int rssi;
 	connect_status_e status;
 	wifi_manager_mode_e mode;
+	// In softAP mode, bssid is a mac address of joined device.
+	//                 num is the number of joined device (current system only supports a device).
+	// In STA mode, bssid is a mac address of AP
+	//                 num is used to check validity of bssid.(if num is 0 then bssid is invalid)
+	uint16_t num;
+	char bssid[WIFIMGR_MACADDR_LEN];
 } wifi_manager_info_s;
 
 /**

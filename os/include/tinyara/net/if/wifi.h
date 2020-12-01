@@ -101,6 +101,12 @@ typedef struct {
 	uint32_t ip4_address;								   /**<	 ip4 address							   */
 	unsigned char mac_address[TRWIFI_MACADDR_LEN];		/**<  MAC address of wifi interface				*/
 	int rssi;											   /**<	 Receive Signal Strength Indication in dBm */
+	// In softAP mode, bssid is a mac address of joined device.
+	//                 num is the number of joined device (current system only supports a device).
+	// In STA mode, bssid is a mac address of AP
+	//                 num is used to check validity of bssid.(if num is 0 then bssid is invalid)
+	uint16_t num;
+	char bssid[WIFI_UTILS_MACADDR_LEN];
 	trwifi_status_e wifi_status;						/**<  @ref trwifi_status					 */
 } trwifi_info;
 

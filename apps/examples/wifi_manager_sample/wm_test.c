@@ -759,6 +759,11 @@ void wm_display_state(void *arg)
 		if (wm_mac_str_to_mac_addr(mac_str, mac_char) < 0) {
 			goto exit;
 		}
+		if (info.num > 0) {
+			int8_t *pmac = (int8_t *)info.bssid;
+			printf("joined device BSSID: %02x:%02x:%02x:%02x:%02x:%02x\n",
+				   pmac[0], pmac[1], pmac[2], pmac[3], pmac[4], pmac[5]);
+		}
 	} else if (info.mode == STA_MODE) {
 		if (info.status == AP_CONNECTED) {
 			printf("[WT] MODE: station (connected)\n");
@@ -778,6 +783,11 @@ void wm_display_state(void *arg)
 		printf("[WT] MAC: %s\n", mac_str);
 		if (wm_mac_str_to_mac_addr(mac_str, mac_char) < 0) {
 			goto exit;
+		}
+		if (info.num > 0) {
+			int8_t *pmac = (int8_t *)info.bssid;
+			printf("AP BSSID: %02x:%02x:%02x:%02x:%02x:%02x\n",
+				   pmac[0], pmac[1], pmac[2], pmac[3], pmac[4], pmac[5]);
 		}
 	} else {
 		printf("[WT] STATE: NONE\n");

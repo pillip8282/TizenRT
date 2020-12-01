@@ -193,6 +193,12 @@ struct wifi_utils_info {
 	unsigned char mac_address[WIFI_UTILS_MACADDR_LEN];    /**<  MAC address of wifi interface             */
 	int rssi;                                             /**<  Receive Signal Strength Indication in dBm */
 	wifi_utils_status_e wifi_status;                      /**<  @ref wifi_utils_status                    */
+	// In softAP mode, bssid is a mac address of joined device.
+	//                 num is the number of joined device (current system only supports a device).
+	// In STA mode, bssid is a mac address of AP
+	//                 num is used to check validity of bssid.(if num is 0 then bssid is invalid)
+	uint16_t num;
+	char bssid[WIFI_UTILS_MACADDR_LEN];
 };
 typedef struct wifi_utils_info wifi_utils_info_s;
 
