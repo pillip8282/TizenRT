@@ -68,8 +68,46 @@ int netdev_get_hwaddr(struct netdev *dev, uint8_t *hwaddr, uint8_t *hwaddr_len)
 }
 
 
+//static uint32_t g_pkbuffer[100] = {0,};
+static uint32_t g_pkindex= 0;
+static uint32_t g_gappkt = 0;
+
+static uint32_t g_pkttotal = 0;
+static uint32_t g_pktsum = 0;
+
+extern uint32_t g_r_pkindex;
+extern uint32_t g_r_gappkt;
+
+extern uint32_t g_r_pktotal;
+extern uint32_t g_r_pktsum;
+
+extern int pk_failto_send; // pkbuild
+
+uint32_t PKGAP = 500;
+
+
 int netdev_input(struct netdev *dev, void *data, uint16_t len)
 {
+	//gpkbuffer[g_pkindex++] = len;
+	g_pkindex++;
+	g_gappkt += len;
+
+	g_pkttotal++;
+	g_pktsum += len;
+
+	if (g_pkindex== PKGAP) {
+		lldbg("[pkbuild] driv avg %lf\t%lf\t%u\t%u\n",
+			  (double)g_gappkt/(double)PKGAP,
+			  (double)g_pktsum/(double)g_pkttotal
+			  , g_pkttotal, g_pktsum);
+		lldbg("[pkbuild] recv avg %lf\t%lf\t%u\t%u\n",
+			  (double)g_r_gappkt/(double)PKGAP,
+			  (double)g_r_pktsum/(double)g_r_pktotal,
+			  g_r_pktotal, g_r_pktsum);
+		lldbg("[pkbuild] fail to %d\tdiff(%d)\n", pk_failto_send, g_pktsum - g_r_pktsum);
+		g_gappkt = g_pkindex = 0;
+	}
+
 	return ND_NETOPS(dev, input)(dev, data, len);
 }
 

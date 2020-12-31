@@ -979,9 +979,29 @@ int lwip_read(int s, void *mem, size_t len)
 	return lwip_recvfrom(s, mem, len, 0, NULL, NULL);
 }
 
+uint32_t g_r_pkindex= 0;
+uint32_t g_r_gappkt = 0;
+
+uint32_t g_r_pktotal = 0;
+uint32_t g_r_pktsum = 0;
+
+extern uint32_t PKGAP;
 int lwip_recv(int s, void *mem, size_t len, int flags)
 {
-	return lwip_recvfrom(s, mem, len, flags, NULL, NULL);
+	int result = lwip_recvfrom(s, mem, len, flags, NULL, NULL);
+
+	g_r_pkindex++;
+	g_r_pktotal++;
+	if (result > 0) {
+		g_r_gappkt += result;
+		g_r_pktsum += result;
+	}
+
+	if (g_r_pkindex== PKGAP) {
+		g_r_gappkt = g_r_pkindex = 0;
+	}
+
+	return result;
 }
 
 int lwip_send(int s, const void *data, size_t size, int flags)

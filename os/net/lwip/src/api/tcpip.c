@@ -188,6 +188,7 @@ static void tcpip_thread(void *arg)
  *          NETIF_FLAG_ETHERNET flags)
  * @param inp the network interface on which the packet was received
  */
+int pk_failto_send = 0; // pkbuild
 err_t tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
 {
 	//LWIP_DEBUGF(TCPIP_DEBUG, ("Entry tcpip_input"));
@@ -214,6 +215,7 @@ err_t tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
 	msg->msg.inp.input_fn = input_fn;
 	if (sys_mbox_trypost(&mbox, msg) != ERR_OK) {
 		memp_free(MEMP_TCPIP_MSG_INPKT, msg);
+		pk_failto_send++;
 		return ERR_MEM;
 	}
 	return ERR_OK;
