@@ -1,24 +1,23 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2021 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  ****************************************************************************/
 /****************************************************************************
- * examples/hello/hello_main.c
  *
- *   Copyright (C) 2008, 2011-2012 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2020 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,81 +54,56 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
+
+#include <stdint.h>
+
+#include <tinyara/board.h>
+
+#include "up_arch.h"
+
 /****************************************************************************
- * hello_main
+ * Public functions
  ****************************************************************************/
-#define ERR printf("[ERR] %s%d\n", __FUNCTION__, __LINE__);
 
-extern int g_wo_test_value;
-extern int g_wo_cnt_auto_connect;
-
-int file_exist (char *filename)
+/****************************************************************************
+ * Name: up_systemreset
+ *
+ * Description:
+ *   Internal, reset logic.
+ *
+ ****************************************************************************/
+static void up_systemreset(void)
 {
-  struct stat buffer;
-  return (stat(filename, &buffer) == 0);
+	sys_reset();
+
+	/* Wait for the reset */
+	for (;;) {
+	}
 }
 
-extern int wm_test_main(int argc, char *argv[]);
-#ifdef CONFIG_BUILD_KERNEL
-int main(int argc, FAR char *argv[])
-#else
-int hello_main(int argc, char *argv[])
-#endif
+/****************************************************************************
+ * Name: board_reset
+ *
+ * Description:
+ *   Reset board.  This function may or may not be supported by a
+ *   particular board architecture.
+ *
+ * Input Parameters:
+ *   status - Status information provided with the reset event.  This
+ *     meaning of this status information is board-specific.  If not used by
+ *     a board, the value zero may be provided in calls to board_reset.
+ *
+ * Returned Value:
+ *   If this function returns, then it was not possible to power-off the
+ *   board due to some constraints.  The return value int this case is a
+ *   board-specific reason for the failure to shutdown.
+ *
+ ****************************************************************************/
+#ifdef CONFIG_BOARDCTL_RESET
+int board_reset(int status)
 {
-	//printf("Hello, World!!\n");
-
-	if (file_exist("/mnt/test.txt")) {
-		printf("[pkbuild] %s:%d\n", __FUNCTION__, __LINE__);
-		//if (argc == 3) {
-		FILE *fp = fopen("/mnt/test.txt", "r");
-		if (!fp) {
-			ERR;
-			return 0;
-		}
-
-		fseek(fp, 0, SEEK_END);
-		int lsize = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-
-		char buffer[256];
-
-		int res = fread(buffer, 1, lsize, fp);
-		fclose(fp);
-		if (res != lsize) {
-			ERR;
-			return -1;
-		}
-		buffer[lsize] = 0;
-		printf("%s\n", buffer);
-
-		char *targv[6] = {NULL, };
-
-		targv[0] = "wm_test";
-		targv[1] = "on_off";
-		targv[2] = strtok(buffer, " ");
-		targv[3] = strtok(NULL, " ");
-		targv[4] = strtok(NULL, " ");
-		targv[5] = NULL;
-		char *count = strtok(NULL, " ");
-		g_wo_cnt_auto_connect = atoi(count);
-
-		for (int i = 0; i < 6; i++) {
-			printf("%s\n", targv[i]);
-		}
-		printf("count %d\n", g_wo_cnt_auto_connect);
-		// todo pkbuild
-		remove("/mnt/test.txt");
-		wm_test_main(6, targv);
-	}
-
-	if (argc == 2) {
-		printf("[pkbuild] %s:%d\n", __FUNCTION__, __LINE__);
-		g_wo_test_value = 1;
-	}
+	up_systemreset();
 
 	return 0;
 }
+#endif

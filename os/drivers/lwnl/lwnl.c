@@ -122,7 +122,6 @@ static const struct file_operations g_lwnl_fops = {
 static int lwnl_open(struct file *filep)
 {
 	LWNL_ENTER;
-	lldbg("[pkbuild] T%d -->lwnl_open (%p) \n", getpid(), __builtin_return_address(0));
 	struct inode *inode = filep->f_inode;
 	struct lwnl_upperhalf_s *upper = inode->i_private;
 
@@ -234,7 +233,6 @@ static int lwnl_ioctl(struct file *filep, int cmd, unsigned long arg)
 	struct lwnl_upperhalf_s *upper = inode->i_private;
 
 	//LWNLDEV_LOCK(upper);
-	printf("[pkbuild] T%d -->%s:%d \n", getpid(), __FUNCTION__, __LINE__);
 	int res = lwnl_add_listener(filep);
 	if (res < 0) {
 		return -1;

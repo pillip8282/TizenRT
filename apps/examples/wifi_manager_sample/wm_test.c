@@ -1015,6 +1015,9 @@ static int _wm_test_softap(struct options *opt, int argc, char *argv[])
 	opt->password = argv[4];
 	return 0;
 }
+extern char g_wo_ssid[100];
+extern char g_wo_auth[100];
+extern char g_wo_pass[100];
 
 static int _wm_test_join(struct options *opt, int argc, char *argv[])
 {
@@ -1035,6 +1038,7 @@ static int _wm_test_join(struct options *opt, int argc, char *argv[])
 		opt->auth_type = WIFI_MANAGER_AUTH_UNKNOWN;
 		opt->crypto_type = WIFI_MANAGER_CRYPTO_UNKNOWN;
 		opt->password = argv[4];
+
 		return 0;
 	}
 
@@ -1058,6 +1062,12 @@ static int _wm_test_join(struct options *opt, int argc, char *argv[])
 		}
 	}
 	opt->password = argv[5];
+
+	printf("[pkbuild] copy file\n");
+	strncpy(g_wo_ssid, argv[3], 100);
+	strncpy(g_wo_auth, argv[4], 100);
+	strncpy(g_wo_pass, argv[5], 100);
+
 	return 0;
 }
 
