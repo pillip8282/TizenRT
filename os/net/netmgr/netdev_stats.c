@@ -22,13 +22,30 @@
 uint32_t g_link_recv_byte = 0;
 uint32_t g_link_recv_cnt = 0;
 uint32_t g_link_recv_err = 0;
+uint32_t g_link_memp_err_cnt = 0;
+uint32_t g_link_pass_err_cnt = 0;
+uint32_t g_link_mbox_err_cnt = 0;
 
 uint32_t g_app_recv_byte = 0;
 uint32_t g_app_recv_cnt = 0;
 
+uint32_t g_ip_recv_cnt = 0;
+uint32_t g_eth_recv_cnt = 0;
+uint32_t g_netmgr_valid_recv_cnt = 0;
+uint32_t g_iperf_ooo_cnt = 0;
+
+uint32_t g_udp_mbox_err = 0;
+
 void netstats_display(void)
 {
-	nlldbg("[driver] total recv %u\t%u\n", g_link_recv_byte, g_link_recv_cnt);
-	nlldbg("[driver] mbox err %u\n", g_link_recv_err);
-	nlldbg("[app] total recv %u\t%u\n", g_app_recv_byte, g_app_recv_cnt);
+	printf("[driver] mbox err %u\n", g_link_recv_err);
+	printf("[driver] total recv %u\t%u\n", g_link_recv_byte, g_link_recv_cnt);
+	printf("[netmgr] total recv %u\n", g_netmgr_valid_recv_cnt);
+	printf("[link] %u %u %u \n", g_link_memp_err_cnt, g_link_pass_err_cnt, g_link_mbox_err_cnt);
+	printf("[eth] total recv %u\n", g_eth_recv_cnt);
+	printf("[ip] total recv %u\n", g_ip_recv_cnt);
+	printf("[udp] post fail count %u\n", g_udp_mbox_err);
+	printf("[app] total recv %u\t%u\n", g_app_recv_byte, g_app_recv_cnt);
+	printf("[iperf] out of order count %u\n", g_iperf_ooo_cnt);
+
 }

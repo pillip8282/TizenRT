@@ -20,6 +20,7 @@
 #define __NETMGR_STATS_H__
 
 #if CONFIG_NET_STATS
+
 extern uint32_t g_link_recv_byte;
 extern uint32_t g_link_recv_cnt;
 extern uint32_t g_link_recv_err;

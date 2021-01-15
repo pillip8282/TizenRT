@@ -188,6 +188,9 @@ static void tcpip_thread(void *arg)
  *          NETIF_FLAG_ETHERNET flags)
  * @param inp the network interface on which the packet was received
  */
+// pkbuild
+extern uint32_t g_link_memp_err_cnt;
+extern uint32_t g_link_pass_err_cnt;
 err_t tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
 {
 	//LWIP_DEBUGF(TCPIP_DEBUG, ("Entry tcpip_input"));
@@ -205,6 +208,7 @@ err_t tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
 
 	msg = (struct tcpip_msg *)memp_malloc(MEMP_TCPIP_MSG_INPKT);
 	if (msg == NULL) {
+		g_link_memp_err_cnt++; // pkbuild
 		return ERR_MEM;
 	}
 
@@ -213,6 +217,7 @@ err_t tcpip_inpkt(struct pbuf *p, struct netif *inp, netif_input_fn input_fn)
 	msg->msg.inp.netif = inp;
 	msg->msg.inp.input_fn = input_fn;
 	if (sys_mbox_trypost(&mbox, msg) != ERR_OK) {
+		g_link_pass_err_cnt++;// pkbuild
 		memp_free(MEMP_TCPIP_MSG_INPKT, msg);
 		return ERR_MEM;
 	}

@@ -187,6 +187,7 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
  *      err_t                   -- ERR_OK if message posted, else ERR_MEM
  *                                  if not.
  *---------------------------------------------------------------------------*/
+extern uint32_t g_link_mbox_err_cnt;// pkbuild
 err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 {
 	err_t err = ERR_OK;
@@ -200,6 +201,7 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 	if (tmp == mbox->front) {
 		LWIP_DEBUGF(SYS_DEBUG, ("Queue Full, returning error\n"));
 		err = ERR_MEM;
+		g_link_mbox_err_cnt++; // pkbuild
 		goto errout_with_mutex;
 	}
 

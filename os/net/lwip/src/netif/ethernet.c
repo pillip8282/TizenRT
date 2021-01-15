@@ -94,6 +94,7 @@ const struct eth_addr ethzero = { {0, 0, 0, 0, 0, 0} };
  * @see ETHARP_SUPPORT_VLAN
  * @see LWIP_HOOK_VLAN_CHECK
  */
+extern uint32_t g_eth_recv_cnt; // pkbuild
 err_t ethernet_input(struct pbuf *p, struct netif *netif)
 {
 	struct eth_hdr *ethhdr;
@@ -109,6 +110,8 @@ err_t ethernet_input(struct pbuf *p, struct netif *netif)
 		MIB2_STATS_NETIF_INC(netif, ifinerrors);
 		goto free_and_return;
 	}
+
+	g_eth_recv_cnt++; // pkbuild
 
 	/* points to packet payload, which starts with an Ethernet header */
 	ethhdr = (struct eth_hdr *)p->payload;

@@ -41,7 +41,7 @@
 #include "lwip/snmp.h"
 #include "lwip/igmp.h"
 #include "netdev_mgr_internal.h"
-
+#include "netdev_stats.h"
 /* This is really kind of bogus.. When asked for an IP address, this is
  * family that is returned in the ifr structure.  Probably could just skip
  * this since the address family has nothing to do with the Ethernet address.
@@ -391,8 +391,7 @@ static err_t lwip_linkoutput(struct netif *nic, struct pbuf *buf)
 
 	return ERR_OK;
 }
-
-
+extern uint32_t g_netmgr_valid_recv_cnt; // pkbuild
 static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 {
 	LWIP_DEBUGF(NETIF_DEBUG, ("passing to LWIP layer, packet len %d \n", len));
@@ -432,10 +431,12 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 	case ETHTYPE_PPPOE:
 #endif
 	{
+		g_netmgr_valid_recv_cnt++; // pkbuild
 		/* full packet send to tcpip_thread to process */
 		if (netif->input(p, netif) != ERR_OK) {
 			LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
 			LINK_STATS_INC(link.err);
+			NETMGR_STATS_INC(g_link_recv_err);
 			pbuf_free(p);
 		} else {
 			LINK_STATS_INC(link.recv);
