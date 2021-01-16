@@ -26,13 +26,12 @@
 #include <time.h>
 #include <assert.h>
 #include <errno.h>
-#include <sys/types.h>
 #include <tinyara/clock.h>
 #include <tinyara/arch.h>
 #include <tinyara/cancelpt.h>
 #include <tinyara/kthread.h>
 #include <tinyara/semaphore.h>
-#include <tinyara/kmalloc.h>
+#include <sys/types.h>
 
 /* lwIP includes. */
 #include "lwip/stats.h"
@@ -187,7 +186,6 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
  *      err_t                   -- ERR_OK if message posted, else ERR_MEM
  *                                  if not.
  *---------------------------------------------------------------------------*/
-extern uint32_t g_link_mbox_err_cnt;// pkbuild
 err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 {
 	err_t err = ERR_OK;
@@ -201,7 +199,6 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 	if (tmp == mbox->front) {
 		LWIP_DEBUGF(SYS_DEBUG, ("Queue Full, returning error\n"));
 		err = ERR_MEM;
-		g_link_mbox_err_cnt++; // pkbuild
 		goto errout_with_mutex;
 	}
 
@@ -582,7 +579,7 @@ err_t sys_mutex_new(sys_mutex_t *mutex)
 	int status = 0;
 
 	if (NULL == mutex) {
-		mutex = (pthread_mutex_t *)kmm_malloc(sizeof(pthread_mutex_t));
+		mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
 	}
 	if (mutex == NULL) {
 #if SYS_STATS

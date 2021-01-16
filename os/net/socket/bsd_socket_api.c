@@ -154,11 +154,17 @@ int listen(int s, int backlog)
 	return lwip_listen(s, backlog);
 }
 
+extern uint32_t g_app_size;
+extern uint32_t g_app_cnt;
 ssize_t recv(int s, void *mem, size_t len, int flags)
 {
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
 	int result = lwip_recv(s, mem, len, flags);
+	if (result > 0) {
+		g_app_size += result;
+		g_app_cnt++;
+	}
 	leave_cancellation_point();
 	return result;
 }
@@ -168,6 +174,10 @@ ssize_t recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from,
 	/* Treat as a cancellation point */
 	(void)enter_cancellation_point();
 	int result = lwip_recvfrom(s, mem, len, flags, from, fromlen);
+	if (result > 0) {
+		g_app_size += result;
+		g_app_cnt++;
+	}
 	leave_cancellation_point();
 	return result;
 }

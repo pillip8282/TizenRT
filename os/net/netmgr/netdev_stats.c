@@ -35,9 +35,10 @@ uint32_t g_netmgr_valid_recv_cnt = 0;
 uint32_t g_iperf_ooo_cnt = 0;
 
 uint32_t g_udp_mbox_err = 0;
-
+extern void stats_display(void);
 void netstats_display(void)
 {
+	stats_display();
 	printf("[driver] mbox err %u\n", g_link_recv_err);
 	printf("[driver] total recv %u\t%u\n", g_link_recv_byte, g_link_recv_cnt);
 	printf("[netmgr] total recv %u\n", g_netmgr_valid_recv_cnt);

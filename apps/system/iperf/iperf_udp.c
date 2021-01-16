@@ -69,7 +69,7 @@
  *
  * receives the data for UDP
  */
-extern uint32_t g_iperf_ooo_cnt; // pkbuild
+//extern uint32_t g_iperf_ooo_cnt; // pkbuild
 int iperf_udp_recv(struct iperf_stream *sp)
 {
 	uint32_t sec;
@@ -125,7 +125,7 @@ int iperf_udp_recv(struct iperf_stream *sp)
 		sp->packet_count = pcount;
 	} else {
 		sp->outoforder_packets++;
-		g_iperf_ooo_cnt++;// pkbuild
+		//g_iperf_ooo_cnt++;// pkbuild
 		// pkbuild iperf_err(sp->test, "OUT OF ORDER - incoming packet = %lld and received packet = %d AND SP = %d", pcount, sp->packet_count, sp->socket);
 	}
 

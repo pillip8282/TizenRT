@@ -177,7 +177,6 @@ static u8_t recv_raw(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_ad
  *
  * @see udp.h (struct udp_pcb.recv) for parameters
  */
-extern uint32_t g_udp_mbox_err;
 static void recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
 	//LWIP_DEBUGF(API_MSG_DEBUG,("ENtry recv_udp"));
@@ -228,7 +227,6 @@ static void recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_ad
 
 	len = p->tot_len;
 	if (sys_mbox_trypost(&conn->recvmbox, buf) != ERR_OK) {
-		g_udp_mbox_err++;
 		netbuf_delete(buf);
 		return;
 	} else {

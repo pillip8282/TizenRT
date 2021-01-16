@@ -178,8 +178,8 @@ int net_ioctl(int sd, int cmd, unsigned long arg)
 	}
 
 	/* ToDo:  Verify that the sd corresponds to valid, allocated socket */
-	sock = get_socket(sd, getpid());
-	if (sock == NULL) {
+	sock = get_socket(sd);
+	if (NULL == sock) {
 		ret = -EBADF;
 		goto errout;
 	}
@@ -208,6 +208,7 @@ int net_ioctl(int sd, int cmd, unsigned long arg)
 		ret = netdev_rtioctl(NULL, cmd, (FAR struct rtentry *)((uintptr_t)arg));
 	}
 #endif							/* CONFIG_NET_ROUTE */
+
 	/* Check for success or failure */
 	if (ret >= 0) {
 		return ret;
@@ -240,7 +241,7 @@ errout:
 int net_vfcntl(int sd, int cmd, va_list ap)
 {
 
-	FAR struct socket *sock = (struct socket *)get_socket(sd, getpid());
+	FAR struct socket *sock = (struct socket *)get_socket(sd);
 	int err = 0;
 	int ret = 0;
 
@@ -399,7 +400,7 @@ errout:
 
 void net_initlist(FAR struct socketlist *list)
 {
-	struct netstack *stk = get_netstack(TR_SOCKET);
+	struct netstack *stk = get_netstack(TR_UDS);
 	if (stk) {
 		stk->ops->initlist(list);
 	}
@@ -421,12 +422,8 @@ void net_initlist(FAR struct socketlist *list)
 
 void net_releaselist(FAR struct socketlist *list)
 {
-	DEBUGASSERT(list);
-	struct netstack *stk = get_netstack(TR_SOCKET);
+	struct netstack *stk = get_netstack(TR_UDS);
 	if (stk) {
-		stk->ops->releaselist(list);
+		stk->ops->releaselist((void *)list);
 	}
-
-	/* Destroy the semaphore */
-	sem_destroy(&list->sl_sem);
 }

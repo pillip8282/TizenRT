@@ -384,7 +384,6 @@ return_noroute:
  * @return ERR_OK if the packet was processed (could return ERR_* if it wasn't
  *         processed, but currently always returns ERR_OK)
  */
-extern uint32_t g_ip_recv_cnt; // pkbuild
 err_t ip4_input(struct pbuf *p, struct netif *inp)
 {
 	struct ip_hdr *iphdr;
@@ -397,7 +396,7 @@ err_t ip4_input(struct pbuf *p, struct netif *inp)
 
 	IP_STATS_INC(ip.recv);
 	MIB2_STATS_INC(mib2.ipinreceives);
-	g_ip_recv_cnt++;// pkbuild
+
 	/* identify the IP header */
 	iphdr = (struct ip_hdr *)p->payload;
 	if (IPH_V(iphdr) != 4) {

@@ -32,7 +32,6 @@
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include "netstack.h"
-#include "netdev_stats.h"
 
 /**
  * Public
@@ -91,7 +90,7 @@ int listen(int sockfd, int backlog)
 {
 	NETSTACK_CALL_BYFD(sockfd, listen, (sockfd, backlog));
 }
-
+extern uint32_t g_app_recv_cnt;
 ssize_t recv(int sockfd, void *mem, size_t len, int flags)
 {
 	/* Treat as a cancellation point */
@@ -99,8 +98,7 @@ ssize_t recv(int sockfd, void *mem, size_t len, int flags)
 	int res = -1;
 	NETSTACK_CALL_BYFD_RET(sockfd, recv, (sockfd, mem, len, flags), res);
 	if (res > 0) {
-		NETMGR_STATS_ADD(g_app_recv_byte, res);
-		NETMGR_STATS_INC(g_app_recv_cnt);
+		g_app_recv_cnt++;
 	}
 	leave_cancellation_point();
 	return res;
@@ -113,8 +111,7 @@ ssize_t recvfrom(int sockfd, void *mem, size_t len, int flags, struct sockaddr *
 	int res = -1;
 	NETSTACK_CALL_BYFD_RET(sockfd, recvfrom, (sockfd, mem, len, flags, from, fromlen), res);
 	if (res > 0) {
-		NETMGR_STATS_ADD(g_app_recv_byte, res);
-		NETMGR_STATS_INC(g_app_recv_cnt);
+		g_app_recv_cnt++;
 	}
 	leave_cancellation_point();
 	return res;
