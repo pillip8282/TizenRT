@@ -232,6 +232,20 @@ typedef struct {
 } wifi_manager_ap_config_s;
 
 /**
+ * @brief Specify scan configuration
+ */
+typedef struct {
+	unsigned char scan_mode; // 0: full, 1: partial
+	unsigned char scan_opt;  // 0: active 1: passive in all channel, 2: force active
+	unsigned char *channel_2g; // it should be freed by API caller
+	unsigned char channel_2g_len;
+	unsigned char *channel_5g; // it should be freed by API caller
+	unsigned char channel_5g_len;
+	char *ssid; // it should be freed by API caller
+	char *bssid; // it should be freed by API caller
+} wifi_manager_scan_config_s;
+
+/**
  * @brief Specify Wi-Fi Manager internal stats information
  */
 typedef struct {
@@ -359,6 +373,17 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void);
 // API type: asynchronous
 // callback: scan_ap_done
 wifi_manager_result_e wifi_manager_scan_ap(void);
+
+/**
+ * @brief Scan nearby access points
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ * @param[in] none
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @since TizenRT v1.1
+ */
+// API type: asynchronous
+// callback: scan_ap_done
+wifi_manager_result_e wifi_manager_scan_ap_ex(wifi_manager_scan_config_s *config);
 
 /**
  * @brief Scan nearby access points
