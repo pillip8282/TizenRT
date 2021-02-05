@@ -54,7 +54,7 @@ TEST_SETUP(write_storage)
 
 	for (int i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
 		g_ss_data[i] = (unsigned char *)malloc(g_size_arr[i]);
-		memset(g_ss_data[i], i + 1, g_size_arr[i]);
+		memset(g_ss_data[i], i + 2, g_size_arr[i]);
 		g_input[i].data = g_ss_data[i];
 		g_input[i].data_len = g_size_arr[i];
 	}
@@ -100,7 +100,7 @@ TEST_SETUP(read_storage)
 
 	for (int i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
 		g_ss_data[i] = (unsigned char *)malloc(g_size_arr[i]);
-		memset(g_ss_data[i], i + 1, g_size_arr[i]);
+		memset(g_ss_data[i], i + 2, g_size_arr[i]);
 		g_input[i].data = g_ss_data[i];
 		g_input[i].data_len = g_size_arr[i];
 	}
@@ -159,7 +159,7 @@ TEST_SETUP(delete_storage)
 
 	for (int i = SL_TEST_START_INDEX; i < SL_TEST_MAX_SLOT_INDEX; i++) {
 		g_ss_data[i] = (unsigned char *)malloc(g_size_arr[i]);
-		memset(g_ss_data[i], i + 1, g_size_arr[i]);
+		memset(g_ss_data[i], i + 2, g_size_arr[i]);
 		g_input[i].data = g_ss_data[i];
 		g_input[i].data_len = g_size_arr[i];
 	}

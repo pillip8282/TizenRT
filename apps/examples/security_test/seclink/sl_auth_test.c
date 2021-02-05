@@ -235,7 +235,7 @@ TEST_SETUP(get_hmac)
 	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_hmac, SL_TEST_AUTH_MEM_SIZE));
 
 	hal_result_e hres = HAL_FAIL;
-	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_HMAC_SHA256, SL_TEST_HMAC_KEY_SLOT, &hres));
+	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_HMAC_SHA256, SL_TEST_HMAC_KEY_SLOT, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);
 
 	ST_END_TEST;
@@ -246,7 +246,7 @@ TEST_TEARDOWN(get_hmac)
 	ST_START_TEST;
 
 	hal_result_e hres = HAL_FAIL;
-	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_HMAC_SHA256, SL_TEST_HMAC_KEY_SLOT, &hres));
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_HMAC_SHA256, SL_TEST_HMAC_KEY_SLOT, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);
 
 	ST_EXPECT_EQ(SECLINK_OK, sl_deinit(g_hnd));
@@ -701,7 +701,7 @@ TEST_F(ecdh_compute_shared_secret)
 		ST_EXPECT_EQ(HAL_SUCCESS, hres);
 
 		ST_EXPECT_EQ(g_shared_secret_a.data_len, g_shared_secret_b.data_len);
-		ST_EXPECT_EQ(0, memcmp(&g_shared_secret_a.data, &g_shared_secret_b.data, g_shared_secret_a.data_len));
+		ST_EXPECT_EQ(0, memcmp(g_shared_secret_a.data, g_shared_secret_b.data, g_shared_secret_a.data_len));
 	}
 
 	ST_END_TEST;
@@ -882,7 +882,7 @@ TEST_F(get_injected)
 
 	hal_result_e hres = HAL_FAIL;
 
-	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_BRAINPOOL_P256R1, SL_TEST_INJECT_KEY_SLOT, &g_inject_key, &hres));
+	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_SEC_P256R1, SL_TEST_INJECT_KEY_SLOT, &g_inject_key, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);
 	ST_EXPECT_EQ(SECLINK_OK, sl_get_certificate(g_hnd, SL_TEST_INJECT_CERT_SLOT, &g_inject_cert, &hres));
 	ST_EXPECT_EQ(HAL_SUCCESS, hres);

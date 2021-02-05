@@ -157,6 +157,15 @@ int se_ameba_hal_init(hal_init_param *params)
 	input_data.factory_slot_key_type[1] = HAL_KEY_ECC_SEC_P256R1;
 	input_data.factory_slot_key_type[2] = HAL_KEY_AES_128;
 
+	/* Testing Use only */
+	for (count = 0; count < 4; count++) {
+		input_data.factory_slot_key_type[count] = HAL_KEY_ECC_SEC_P256R1;
+	}
+	/* Testing Use only */
+	for (count = 4; count < USABLE_FACTORY_KEY_INDEX; count++) {
+		input_data.factory_slot_key_type[count] = HAL_KEY_AES_128;
+	}
+
 	/* Factory Key and Cert address (Flash) */
 	input_data.factory_cert_addr = FACTORY_CERT_ADDR;
 	input_data.factory_key_addr = FACTORY_KEY_ADDR;
@@ -789,6 +798,36 @@ int se_ameba_hal_delete_storage(uint32_t ss_idx)
 	ss_idx = ss_idx + 1;	/* Change Range to Slot 1-33 */
 	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
 	ret = ameba_hal_delete_storage(ss_idx);
+	up_free_secure_context();
+
+	if (ret != HAL_SUCCESS) {
+		sedbg("RTL SE failed (%zu)\n", ret);
+	}
+	return ret;
+}
+
+int se_ameba_hal_write_factory_cert(uint32_t cert_idx, hal_data *cert)
+{
+	AWRAP_ENTER;
+	int ret;
+
+	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
+	ret = ameba_hal_write_factory_cert(cert_idx, cert);
+	up_free_secure_context();
+
+	if (ret != HAL_SUCCESS) {
+		sedbg("RTL SE failed (%zu)\n", ret);
+	}
+	return ret;
+}
+
+int se_ameba_hal_write_factory_key(uint32_t key_idx, hal_data *key)
+{
+	AWRAP_ENTER;
+	int ret;
+
+	up_allocate_secure_context(CONFIG_SE_SECURE_CONTEXT_SIZE);
+	ret = ameba_hal_write_factory_key(key_idx, key);
 	up_free_secure_context();
 
 	if (ret != HAL_SUCCESS) {
