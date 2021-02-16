@@ -146,7 +146,7 @@ TEST_TEARDOWN(sta_join)
 {
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_disconnect_ap());
-	WO_TEST_WAIT(g_conn, g_wo_queue);
+	WO_TEST_WAIT(&g_conn, g_wo_queue);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_deinit());
 	ST_END_TEST;
 }
@@ -157,7 +157,7 @@ TEST_F(sta_join)
 	wifi_manager_ap_config_s apconfig;
 	wm_get_apinfo(&apconfig);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
-	WO_TEST_WAIT(g_conn, g_wo_queue);
+	WO_TEST_WAIT(&g_conn, g_wo_queue);
 
 	ST_END_TEST;
 }
@@ -183,7 +183,7 @@ TEST_F(sta_scan)
 {
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_scan_ap());
-	WO_TEST_WAIT(g_conn, g_wo_queue);
+	WO_TEST_WAIT(&g_conn, g_wo_queue);
 	ST_END_TEST;
 }
 
@@ -198,7 +198,7 @@ TEST_SETUP(sta_leave)
 	wifi_manager_ap_config_s apconfig;
 	wm_get_apinfo(&apconfig);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
-	WO_TEST_WAIT(g_conn, g_wo_queue);
+	WO_TEST_WAIT(&g_conn, g_wo_queue);
 
 	ST_END_TEST;
 }
@@ -214,7 +214,7 @@ TEST_F(sta_leave)
 {
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_disconnect_ap());
-	WO_TEST_WAIT(g_conn, g_wo_queue);
+	WO_TEST_WAIT(&g_conn, g_wo_queue);
 
 	ST_END_TEST;
 }
@@ -269,7 +269,7 @@ TEST_F(softap_scan)
 {
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_scan_ap());
-	WO_TEST_WAIT(g_conn, g_wo_queue);
+	WO_TEST_WAIT(&g_conn, g_wo_queue);
 	ST_END_TEST;
 }
 
@@ -283,7 +283,7 @@ TEST_SETUP(softap_joined_scan)
 	wifi_manager_softap_config_s ap_config;
 	wm_get_softapinfo(&ap_config);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
-	WO_TEST_WAIT(g_conn, g_wo_queue);
+	WO_TEST_WAIT(&g_conn, g_wo_queue);
 
 	ST_END_TEST;
 }
@@ -299,7 +299,7 @@ TEST_F(softap_joined_scan)
 {
 	ST_START_TEST;
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_scan_ap());
-	WO_TEST_WAIT(g_conn, g_wo_queue);
+	WO_TEST_WAIT(&g_conn, g_wo_queue);
 	ST_END_TEST;
 }
 
@@ -339,7 +339,7 @@ TEST_SETUP(softap_joined_stop)
 	wifi_manager_softap_config_s ap_config;
 	wm_get_softapinfo(&ap_config);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
-	WO_TEST_WAIT(g_conn, g_wo_queue);
+	WO_TEST_WAIT(&g_conn, g_wo_queue);
 
 	ST_END_TEST;
 }
@@ -393,7 +393,7 @@ TEST_SETUP(conn_to_softap)
 	wifi_manager_ap_config_s apconfig;
 	wm_get_apinfo(&apconfig);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_connect_ap(&apconfig));
-	WO_TEST_WAIT(g_conn, g_wo_queue);
+	WO_TEST_WAIT(&g_conn, g_wo_queue);
 	ST_END_TEST;
 }
 
@@ -450,7 +450,7 @@ TEST_SETUP(join_to_sta)
 	wifi_manager_softap_config_s ap_config;
 	wm_get_softapinfo(&ap_config);
 	ST_EXPECT_EQ(WIFI_MANAGER_SUCCESS, wifi_manager_set_mode(SOFTAP_MODE, &ap_config));
-	WO_TEST_WAIT(g_conn, g_wo_queue); // wait STA joined
+	WO_TEST_WAIT(&g_conn, g_wo_queue); // wait STA joined
 	ST_END_TEST;
 }
 

@@ -171,7 +171,7 @@ static int run_connecting(wifi_manager_ap_config_s *ap_config)
 	}
 
 	int conn = WO_CONN_FAIL;
-	WO_TEST_WAIT(conn, g_wo_queue);
+	WO_TEST_WAIT(&conn, g_wo_queue);
 
 	if (conn == WO_CONN_FAIL) {
 		// does it need to get info from wi-fi wm_get_info(ap_config);
@@ -194,7 +194,7 @@ static int run_connected(void)
 {
 	printf("[WO] -->%s\n", __FUNCTION__);
 	int conn = WO_CONN_FAIL;
-	WO_TEST_WAIT(conn, g_wo_queue);
+	WO_TEST_WAIT(&conn, g_wo_queue);
 	if (conn == WO_CONN_FAIL) {
 		return 1;
 	} else {
