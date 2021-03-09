@@ -65,7 +65,6 @@ static void _free_scan_info(wifi_manager_scan_info_s *scan_list)
 	}
 }
 
-
 static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_scan_list,
 										 wifi_utils_scan_list_s *wu_scan_list)
 {
@@ -99,7 +98,6 @@ static wifi_manager_result_e _convert_scan_info(wifi_manager_scan_info_s **wm_sc
 	return WIFI_MANAGER_SUCCESS;
 }
 
-
 void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 {
 	WM_ENTER;
@@ -111,32 +109,32 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 		}
 		switch (evt) {
 		case CB_STA_CONNECTED:
-			WM_LOG_VERBOSE("[WM] call sta connect success event\n");
+			WM_LOG_INFO("[WM] call sta connect success event\n");
 			cbk->sta_connected(WIFI_MANAGER_SUCCESS);
 			break;
 		case CB_STA_CONNECT_FAILED:
-			WM_LOG_VERBOSE("[WM] call sta connect fail event\n");
+			WM_LOG_INFO("[WM] call sta connect fail event\n");
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_FAIL);
 			cbk->sta_connected(WIFI_MANAGER_FAIL);
 			break;
 		case CB_STA_DISCONNECTED:
-			WM_LOG_VERBOSE("[WM] call sta disconnect event\n");
+			WM_LOG_INFO("[WM] call sta disconnect event\n");
 			cbk->sta_disconnected(WIFI_MANAGER_DISCONNECT);
 			break;
 		case CB_STA_RECONNECTED:
-			WM_LOG_VERBOSE("[WM] call sta disconnect event\n");
+			WM_LOG_INFO("[WM] call sta reconnect event\n");
 			cbk->sta_disconnected(WIFI_MANAGER_RECONNECT);
 			break;
 		case CB_STA_JOINED:
-			WM_LOG_VERBOSE("[WM] call sta join event\n");
+			WM_LOG_INFO("[WM] call sta join event\n");
 			cbk->softap_sta_joined();
 			break;
 		case CB_STA_LEFT:
-			WM_LOG_VERBOSE("[WM] call sta leave event\n");
+			WM_LOG_INFO("[WM] call sta leave event\n");
 			cbk->softap_sta_left();
 			break;
 		case CB_SCAN_DONE:
-			WM_LOG_VERBOSE("[WM] call sta scan event\n");
+			WM_LOG_INFO("[WM] call sta scan event\n");
 			/* convert scan data.*/
 			wifi_manager_scan_info_s *info = NULL;
 			wifi_utils_scan_list_s *list = (wifi_utils_scan_list_s *)arg;
@@ -159,7 +157,6 @@ void _handle_user_cb(_wifimgr_usr_cb_type_e evt, void *arg)
 	}
 	WIFIMGR_STATS_INC(evt);
 }
-
 
 /*
  * Public function
