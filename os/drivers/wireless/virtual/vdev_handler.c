@@ -48,7 +48,7 @@ static void _generate_disconnect(int argc, char *argv[])
 	int sleep_time = atoi(argv[1]);
 	lwnl_cb_status event_type = (lwnl_cb_status)atoi(argv[2]);
 
-	printf("[pkbuild] sleep (%d) event type(%d)\n", sleep_time, event_type);
+	VWIFI_LOG("sleep (%d) event type(%d)\n", sleep_time, event_type);
 	sleep(sleep_time);
 	vwifi_callback_handler(event_type);
 }

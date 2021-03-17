@@ -345,7 +345,6 @@ int lwnl_postmsg(lwnl_cb_status evttype, void *buffer)
 	if (!g_lwnl_upper) {
 		return -1;
 	}
-
 	int res = lwnl_add_event(evttype, buffer);
 	if (res < 0) {
 		return -1;

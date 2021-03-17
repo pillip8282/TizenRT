@@ -254,12 +254,14 @@ fetch_scan_results(trwifi_scan_list_s **scan_list, slsi_scan_info_t **slsi_scan_
 /*
  * Callback
  */
-static int slsi_drv_callback_handler(void *arg)
+//static int slsi_drv_callback_handler(void *arg)
+static int slsi_drv_callback_handler(int argc, char *argv[])
 {
-	int *type = (int*)(arg);
+	//int *type = (int*)(arg);
+	int type = (int)(argv[1][0] - '0');
 
-	vddbg("Got callback from SLSI drv (%d)\n", *type);
-	switch (*type) {
+	vddbg("Got callback from SLSI drv (%d)\n", type);
+	switch (type) {
 	case 1:
 		lwnl_postmsg(LWNL_STA_CONNECTED, NULL);
 		break;
@@ -280,64 +282,58 @@ static int slsi_drv_callback_handler(void *arg)
 		break;
 	}
 
-	kmm_free(type);
+	//kmm_free(type);
 
 	return 0;
 }
 
 static void linkup_handler(slsi_reason_t *reason)
 {
-	int *type = (int *)kmm_malloc(sizeof(int));
-	if (type == NULL) {
-		vddbg("malloc error\n");
-		return;
-	}
+	char *argv[2];
+	argv[1] = NULL;
+	char data[2] = {0, 0};
 
 	if (g_mode == SLSI_WIFI_STATION_IF) {
 		if (reason->reason_code == SLSI_STATUS_SUCCESS) {
-			*type = 1;
+			data[0] = '1';
 		} else {
-			*type = 2;
+			data[0] = '2';
 		}
 	} else if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
-		*type = 3;
+		data[0] = '3';
 	}
-
+	argv[0] = data;
 	/*  If driver sends event to lwnl80211 directly it will generate platform watchdog */
-	pthread_t tid;
-	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)slsi_drv_callback_handler, (void *)type);
-	if (ret != 0) {
+
+	pid_t pid = kernel_thread("lwnl80211_cbk_handler", 100, 1024, (main_t)slsi_drv_callback_handler, argv);
+	if (pid < 0) {
 		vddbg("pthread create fail(%d)\n", errno);
-		kmm_free(type);
 		return;
 	}
-	pthread_setname_np(tid, "trwifi_cbk_handler");
-	pthread_detach(tid);
+
 }
 
 
 static void linkdown_handler(slsi_reason_t *reason)
 {
-	int *type = (int *)kmm_malloc(sizeof(int));
-	if (type == NULL) {
-		vddbg("malloc error linkdown\n");
-		return;
-	}
-	*type = 4;
+	char *argv[2];
+	argv[1] = NULL;
+	char data[2] = {0, 0};
+	data[0] = '4';
+
 	if (g_mode == SLSI_WIFI_STATION_IF) {
-		*type = 4;
+		data[0] = '4';
 	} else if (g_mode == SLSI_WIFI_SOFT_AP_IF) {
-		*type = 5;
+		data[0] = '5';
 	}
-	pthread_t tid;
-	int ret = pthread_create(&tid, NULL, (pthread_startroutine_t)slsi_drv_callback_handler, (void *)type);
-	if (ret != 0) {
+
+	argv[0] = data;
+	pid_t pid = kernel_thread("lwnl80211_cbk_handler", 100, 1024, (main_t)slsi_drv_callback_handler, argv);
+	if (pid < 0) {
 		vddbg("pthread create fail(%d)\n", errno);
-		kmm_free(type);
 		return;
 	}
-	pthread_setname_np(tid, "trwifi_cbk_handler");
-	pthread_detach(tid);
+
 }
 
 
