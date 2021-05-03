@@ -1,0 +1,9 @@
+tar remote:3333
+dir ../apps/system/utils/
+dir net
+dir ../lib/libc/
+dir ./fs/vfs
+dir ./mm/kmm_heap/
+dir drivers/
+dir ../framework/
+source gdb_script

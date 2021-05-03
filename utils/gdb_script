@@ -1,0 +1,4 @@
+define reset_artik
+monitor reset halt
+monitor cortex_r4 maskisr on
+end
