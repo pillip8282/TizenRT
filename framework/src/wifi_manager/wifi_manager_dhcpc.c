@@ -29,7 +29,6 @@
 #include "wifi_manager_dhcp.h"
 
 #define TAG "[WM]"
-
 /**
  * Internal DHCP client APIs
  */

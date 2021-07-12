@@ -79,14 +79,6 @@ config WIFI_PROFILE_SECURESTORAGE
 
 endif # WIFI_MANAGER_SAVE_CONFIG
 
-config WIFIMGR_SOFTAP_IFNAME
-	string "Interface name of softap mode"
-	default "wl1"
-
-config WIFIMGR_STA_IFNAME
-	string "Interface name of station mode"
-	default "wl1"
-
 config WIFIMGR_DISABLE_DHCPC
 	bool "Disable auto get ip (ipv4 dhcp client)"
 	default n

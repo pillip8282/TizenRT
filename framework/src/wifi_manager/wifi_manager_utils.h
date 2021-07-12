@@ -65,7 +65,3 @@
 			return ret;									\
 		}												\
 	} while (0)
-
-/*  Network Interface Card name definition */
-#define WIFIMGR_SOFTAP_IFNAME CONFIG_WIFIMGR_SOFTAP_IFNAME
-#define WIFIMGR_STA_IFNAME CONFIG_WIFIMGR_STA_IFNAME

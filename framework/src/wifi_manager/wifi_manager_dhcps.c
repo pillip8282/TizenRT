@@ -25,13 +25,11 @@
 #include <tinyara/net/netlog.h>
 #include "wifi_manager_error.h"
 #include "wifi_manager_dhcp.h"
-#define TAG "[WM]"
 
+#define TAG "[WM]"
 /**
  * Enum, definitions and variables
  */
-#define WIFIMGR_SOFTAP_IFNAME    CONFIG_WIFIMGR_SOFTAP_IFNAME
-#define WIFIMGR_STA_IFNAME       CONFIG_WIFIMGR_STA_IFNAME
 #define WIFIMGR_SET_IP4ADDR(intf, ip, netmask, gateway)         \
 	do {                                                        \
 		int res = -1;                                           \

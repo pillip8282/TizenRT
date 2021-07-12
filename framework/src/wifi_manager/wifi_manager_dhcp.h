@@ -24,6 +24,9 @@
 #include <arpa/inet.h>
 #include <wifi_manager/wifi_manager.h>
 
+#define WIFIMGR_SOFTAP_IFNAME    "wlan0"
+#define WIFIMGR_STA_IFNAME       "wlan0"
+
 #define WIFIMGR_SET_IP4ADDR(intf, ip, netmask, gateway)         \
 	do {                                                        \
 		int res = -1;                                           \
