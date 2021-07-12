@@ -29,11 +29,9 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <tinyara/lwnl/lwnl.h>
+#define LWNL_TEST_HEADER_LEN (sizeof(lwnl_cb_status) + sizeof(uint32_t))
 
-/*
- * it's test code so it doesn't perform error handling strictly.
- */
-static void *event_listener(void *arg)
+static void *_ble_event_listener(void *arg)
 {
 	int res = 0;
 	int idx = *((int *)arg);
@@ -65,8 +63,6 @@ static void *event_listener(void *arg)
 		}
 
 		if (FD_ISSET(fd, &rfds)) {
-			#define LWNL_TEST_HEADER_LEN (sizeof(lwnl_cb_status) + sizeof(uint32_t))
-
 			char buf[LWNL_TEST_HEADER_LEN] = {0, };
 			lwnl_cb_status status;
 			uint32_t len;
@@ -87,6 +83,69 @@ static void *event_listener(void *arg)
 			}
 		}
 	}
+}
+/*
+ * it's test code so it doesn't perform error handling strictly.
+ */
+static void *_wifi_event_listener(void *arg)
+{
+	int res = 0;
+	int idx = *((int *)arg);
+	printf("[%d] run event listener\n", idx);
+	int fd = socket(AF_LWNL, SOCK_RAW, LWNL_ROUTE);
+	if (fd < 0) {
+		printf("[%d] fail to create socket\n", idx);
+		return NULL;
+	}
+
+	res = bind(fd, NULL, 0);
+	if (res < 0) {
+		printf("[%d] bind fail errno(%d)\n", idx, errno);
+		close(fd);
+		return NULL;
+	}
+
+	fd_set rfds, ofds;
+	FD_ZERO(&ofds);
+	FD_SET(fd, &ofds);
+
+	printf("[%d] run event loop\n", idx);
+	for (;;) {
+		rfds = ofds;
+		res = select(fd + 1, &rfds, NULL, NULL, 0);
+		if (res <= 0) {
+			printf("[%d] select error res(%d) errno(%d))\n", idx, res, errno);
+			return NULL;
+		}
+
+		if (FD_ISSET(fd, &rfds)) {
+			char buf[LWNL_TEST_HEADER_LEN] = {0, };
+			lwnl_cb_status status;
+			uint32_t len;
+			int nbytes = read(fd, (char *)buf, LWNL_TEST_HEADER_LEN);
+			if (nbytes < 0) {
+				printf("[%d] read error bytes(%d) errno(%d))\n", idx, nbytes, errno);
+				return NULL;
+			}
+			memcpy(&status, buf, sizeof(lwnl_cb_status));
+			memcpy(&len, buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
+			printf("[%d] status (%d) (%d) len(%d)\n", idx, status.type, status.evt, len);
+
+			// flush the event queue
+			if (len > 0) {
+				char *tmp = (char *)malloc(len);
+				read(fd, tmp, len);
+				free(tmp);
+			}
+		}
+	}
+}
+
+static void _event_generate(void *arg)
+{
+	trwifi_post_event(NULL, LWNL_EVT_UNKNOWN, NULL, 0);
+	trwifi_post_event(NULL, LWNL_EVT_UNKNOWN, NULL, 0);
+	trwifi_post_event(NULL, LWNL_EVT_UNKNOWN, NULL, 0);
 }
 
 #ifdef CONFIG_BUILD_KERNEL
@@ -115,7 +174,7 @@ int lwnl_sample_main(int argc, char *argv[])
 	/*  run event listener thread */
 	printf("Run %d listener threads\n", num_threads);
 	for (int i = 0; i < num_threads; i++) {
-		pthread_create((pid + i), NULL, event_listener, (void *)&i);
+		pthread_create((pid + i), NULL, _wifi_event_listener, (void *)&i);
 	}
 
 	printf("Run wi-fi manager to generate events\n");
