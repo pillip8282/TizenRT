@@ -197,6 +197,7 @@ static err_t _netif_loop_output_ipv6(struct netif *netif, struct pbuf *p, const 
 #endif							/* LWIP_IPV6 */
 #endif							/* LWIP_HAVE_LOOPIF */
 
+#if LWIP_HAVE_LOOPIF
 static err_t _netif_loopif_init(struct netif *netif)
 {
 	/* initialize the snmp variables and counters inside the struct netif
@@ -221,6 +222,7 @@ static err_t _netif_loopif_init(struct netif *netif)
 #endif
 	return ERR_OK;
 }
+#endif
 
 static void _lwip_init_loop(struct netif *nic)
 {
@@ -409,7 +411,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 	return 0;
 }
 #endif /*  CONFIG_NET_NETMGR_ZEROCOPY */
-
+#if LWIP_IPV4 && LWIP_IGMP
 static err_t lwip_set_multicast_list(struct netif *nic, const ip4_addr_t *group, enum netif_mac_filter_action action)
 {
 	struct netdev *dev = LW_GETND(nic);
@@ -423,7 +425,7 @@ static err_t lwip_set_multicast_list(struct netif *nic, const ip4_addr_t *group,
 	}
 	return ERR_OK;
 }
-
+#endif
 #ifdef CONFIG_NET_IPv4
 static int lwip_get_ip4addr(struct netdev *dev, struct sockaddr *addr, int type)
 {

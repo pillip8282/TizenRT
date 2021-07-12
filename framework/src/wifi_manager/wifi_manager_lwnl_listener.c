@@ -165,10 +165,14 @@ int lwnl_fetch_event(int fd, void *buf, int buflen)
 	if (status.type == LWNL_DEV_WIFI) {
 		(void)_lwnl_call_event(fd, status, len);
 	} else {
-		char *buf = (char *)malloc(len);
-		int res = read(fd, buf, len);
+		char *tmp_buf = (char *)malloc(len);
+		int res = read(fd, tmp_buf, len);
+		if (res < 0) {
+			NET_LOGE(TAG, "critical read error %d\n", errno);
+			assert(0);
+		}
 		NET_LOGI(TAG, "read unused data in the socket[%d]\n", res);
-		free(buf);
+		free(tmp_buf);
 	}
 
 	hmsg->signal = NULL;

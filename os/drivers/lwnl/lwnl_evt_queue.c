@@ -15,14 +15,14 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #include <tinyara/config.h>
 #include <tinyara/kmalloc.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <debug.h>
 #include <net/if.h>
 #include <pthread.h>
+#include <debug.h>
+#include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 #include "lwnl_evt_queue.h"
 #include "lwnl_log.h"
