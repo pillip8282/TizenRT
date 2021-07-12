@@ -15,12 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#ifndef __VWIFI_HANDLER_H__
-#define __VWIFI_HANDLER_H__
-
-#define VWIFI_LOG vdvdbg
-#define VWIFI_ENTRY vdvdbg("-->T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__)
-#define VWIFI_ERROR(res) vddbg("T%d error %d %d %s:%d\n", getpid(), res, errno, __FUNCTION__, __LINE__)
+#pragma once
 
 typedef enum {
 	VWIFI_MSG_INIT,
@@ -101,4 +96,3 @@ struct vwifi_ops {
 
 int vwifi_handle_message(struct vwifi_req *req);
 int vwifi_create_event(uint32_t event, int32_t res, int32_t sleep);
-#endif // #define __VWIFI_HANDLER_H__

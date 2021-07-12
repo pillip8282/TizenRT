@@ -36,9 +36,10 @@
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <tinyara/net/if/wifi.h>
 #include "vdev_handler.h"
+#include "vdev_log.h"
 
 #define VWIFI_MSG_QUEUE_NAME "/dev/vwifi"
-
+#define TAG "[VWIFI]"
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -87,13 +88,13 @@ static inline int _create_message(struct vwifi_msg **vmsg, struct vwifi_req *req
 {
 	struct vwifi_msg *tmsg = (struct vwifi_msg *)kmm_malloc(sizeof(struct vwifi_msg));
 	if (!tmsg) {
-		VWIFI_ERROR(0);
+		VWIFI_LOGE(TAG, "code (%d)\n", 0);
 		return -1;
 	}
 	sem_t *signal = (sem_t *)kmm_malloc(sizeof(sem_t));
 	if (!signal) {
 		kmm_free(tmsg);
-		VWIFI_ERROR(0);
+		VWIFI_LOGE(TAG, "code (%d)\n", 0);
 		return -1;
 	}
 	sem_init(signal, 0, 0);
@@ -123,7 +124,7 @@ static inline void _wait_message(struct vwifi_msg *msg)
 {
 	int res = sem_wait(msg->signal);
 	if (res < 0) {
-		VWIFI_ERROR(res);
+		VWIFI_LOGE(TAG, "code (%d)\n", res);
 	}
 }
 
@@ -131,7 +132,7 @@ static inline void _send_signal(struct vwifi_msg *msg)
 {
 	int res = sem_post(msg->signal);
 	if (res < 0) {
-		VWIFI_ERROR(res);
+		VWIFI_LOGE(TAG, "code (%d)\n", res);
 	}
 }
 
@@ -141,7 +142,7 @@ static inline int _recv_message(int fd, char *buf, int buflen)
 	while (1) {
 		int res = read(fd, (void *)(buf + received), buflen - received);
 		if (res < 0) {
-			VWIFI_ERROR(res);
+			VWIFI_LOGE(TAG, "code (%d)\n", res);
 			return -1;
 		}
 		received += res;
@@ -158,7 +159,7 @@ static inline int _send_message(int fd, char *buf, int buflen)
 	while (1) {
 		int res = write(fd, (void *)(buf + sent), buflen - sent);
 		if (res < 0) {
-			VWIFI_ERROR(res);
+			VWIFI_LOGE(TAG, "code (%d)\n", res);
 			return -1;
 		}
 		sent += res;
@@ -173,14 +174,14 @@ static inline int _progress_message(struct vwifi_req *req)
 {
 	int fd = open(VWIFI_MSG_QUEUE_NAME, O_WRONLY);
 	if (fd < 0) {
-		VWIFI_ERROR(0);
+		VWIFI_LOGE(TAG, "code (%d)\n", 0);
 		return -1;
 	}
 
 	struct vwifi_msg *msg = NULL;
 	int res = _create_message(&msg, req);
 	if (res < 0) {
-		VWIFI_ERROR(res);
+		VWIFI_LOGE(TAG, "code (%d)\n", res);
 		close(fd);
 		return -1;
 	}
@@ -188,7 +189,7 @@ static inline int _progress_message(struct vwifi_req *req)
 	res = _send_message(fd, (char *)msg, sizeof(struct vwifi_msg));
 	close(fd);
 	if (res < 0) {
-		VWIFI_ERROR(res);
+		VWIFI_LOGE(TAG, "code (%d)\n", res);
 		_destroy_message(msg);
 		return -1;
 	}
@@ -203,13 +204,13 @@ int _vwifi_create_msgqueue(int *fd)
 {
 	int res = mkfifo(VWIFI_MSG_QUEUE_NAME, 0666);
 	if (res < 0 && res != -EEXIST) {
-		VWIFI_ERROR(0);
+		VWIFI_LOGE(TAG, "code (%d)\n", 0);
 		return -1;
 	}
 
 	*fd = open(VWIFI_MSG_QUEUE_NAME, O_RDWR);
 	if (*fd < 0) {
-		VWIFI_ERROR(0);
+		VWIFI_LOGE(TAG, "code (%d)\n", 0);
 		unlink(VWIFI_MSG_QUEUE_NAME);
 		return -1;
 	}
@@ -245,7 +246,7 @@ static void vdev_run(int argc, char *argv[])
 	int fd;
 	int res = _vwifi_create_msgqueue(&fd);
 	if (res < 0) {
-		VWIFI_ERROR(0);
+		VWIFI_LOGE(TAG, "code (%d)\n", 0);
 		return;
 	}
 
@@ -260,19 +261,19 @@ static void vdev_run(int argc, char *argv[])
 			if (errno == EINTR) {
 				continue;
 			}
-			VWIFI_ERROR(res);
+			VWIFI_LOGE(TAG, "code (%d)\n", res);
 			break;
 		}
 		struct vwifi_msg msg;
 		res = _recv_message(fd, (char *)&msg, sizeof(struct vwifi_msg));
 		if (res < 0) {
-			VWIFI_ERROR(res);
+			VWIFI_LOGE(TAG, "code (%d)\n", res);
 			break;
 		}
 
 		res = vwifi_handle_message(msg.req);
 		if (res < 0) {
-			VWIFI_ERROR(res);
+			VWIFI_LOGE(TAG, "code (%d)\n", res);
 			break;
 		}
 		_send_signal(&msg);
@@ -285,7 +286,7 @@ void vwifi_start(void)
 	vwifi_initialize_scan();
 	g_vwifi_dev = vdev_register_dev();
 	if (!g_vwifi_dev) {
-		VWIFI_ERROR(0);
+		VWIFI_LOGE(TAG, "code (%d)\n", 0);
 		return;
 	}
 	netdev_set_hwaddr(g_vwifi_dev, g_hwaddr, IFHWADDRLEN);
@@ -293,16 +294,16 @@ void vwifi_start(void)
 	int new_thread = kernel_thread("wifi mocking driver", 100, 2048,
 								   (main_t)vdev_run, (char *const *)NULL);
 	if (new_thread < 0) {
-		VWIFI_ERROR(new_thread);
+		VWIFI_LOGE(TAG, "code (%d)\n", new_thread);
 	}
 	return;
 }
 
 void vwifi_send_packet(uint8_t *buf, uint32_t len)
 {
-	VWIFI_LOG("send packet %d\n", len);
+	VWIFI_LOGI(TAG, "send packet %d\n", len);
 	if (!g_vwifi_dev) {
-		VWIFI_ERROR(0);
+		VWIFI_LOGE(TAG, "code (%d)\n", 0);
 		return;
 	}
 	netdev_input(g_vwifi_dev, buf, len);
@@ -318,12 +319,12 @@ void up_netinitialize(void)
  */
 trwifi_result_e vdev_init(struct netdev *dev)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 
 	struct vwifi_req req = {VWIFI_MSG_INIT, NULL, 0};
 	int res = _progress_message(&req);
 	if (res < 0) {
-		VWIFI_ERROR(0);
+		VWIFI_LOGE(TAG, "code (%d)\n", 0);
 		return TRWIFI_FAIL;
 	}
 	return req.res;
@@ -331,7 +332,7 @@ trwifi_result_e vdev_init(struct netdev *dev)
 
 trwifi_result_e vdev_deinit(struct netdev *dev)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	trwifi_result_e tres = TRWIFI_SUCCESS;
 	struct vwifi_req req = {VWIFI_MSG_DEINIT, NULL, tres};
 	int res = _progress_message(&req);
@@ -343,7 +344,7 @@ trwifi_result_e vdev_deinit(struct netdev *dev)
 
 trwifi_result_e vdev_scan_ap(struct netdev *dev, trwifi_ap_config_s *config)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	trwifi_result_e tres = TRWIFI_SUCCESS;
 	struct vwifi_req req = {VWIFI_MSG_SCANAP, NULL, tres};
 	int res = _progress_message(&req);
@@ -355,7 +356,7 @@ trwifi_result_e vdev_scan_ap(struct netdev *dev, trwifi_ap_config_s *config)
 
 trwifi_result_e vdev_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	trwifi_result_e tres = TRWIFI_SUCCESS;
 	struct vwifi_req req = {VWIFI_MSG_CONNECTAP, NULL, tres};
 	int res = _progress_message(&req);
@@ -367,7 +368,7 @@ trwifi_result_e vdev_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_conne
 
 trwifi_result_e vdev_disconnect_ap(struct netdev *dev, void *arg)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	trwifi_result_e tres = TRWIFI_SUCCESS;
 	struct vwifi_req req = {VWIFI_MSG_DISCONENCTAP, NULL, tres};
 	int res = _progress_message(&req);
@@ -379,7 +380,7 @@ trwifi_result_e vdev_disconnect_ap(struct netdev *dev, void *arg)
 
 trwifi_result_e vdev_get_info(struct netdev *dev, trwifi_info *wifi_info)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 
 	wifi_info->rssi = 30;
 	wifi_info->wifi_status = TRWIFI_DISCONNECTED;
@@ -389,7 +390,7 @@ trwifi_result_e vdev_get_info(struct netdev *dev, trwifi_info *wifi_info)
 
 trwifi_result_e vdev_start_softap(struct netdev *dev, trwifi_softap_config_s *softap_config)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	trwifi_result_e tres = TRWIFI_SUCCESS;
 	struct vwifi_req req = {VWIFI_MSG_STARTSOFTAP, NULL, tres};
 	uint8_t *ssid = (uint8_t *)kmm_zalloc(softap_config->ssid_length + 1);
@@ -407,7 +408,7 @@ trwifi_result_e vdev_start_softap(struct netdev *dev, trwifi_softap_config_s *so
 
 trwifi_result_e vdev_start_sta(struct netdev *dev)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	trwifi_result_e tres = TRWIFI_SUCCESS;
 	struct vwifi_req req = {VWIFI_MSG_STARTSTA, NULL, tres};
 	int res = _progress_message(&req);
@@ -419,7 +420,7 @@ trwifi_result_e vdev_start_sta(struct netdev *dev)
 
 trwifi_result_e vdev_stop_softap(struct netdev *dev)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	trwifi_result_e tres = TRWIFI_SUCCESS;
 	struct vwifi_req req = {VWIFI_MSG_STOPSOFTAP, NULL, tres};
 	int res = _progress_message(&req);
@@ -432,7 +433,7 @@ trwifi_result_e vdev_stop_softap(struct netdev *dev)
 
 trwifi_result_e vdev_set_autoconnect(struct netdev *dev, uint8_t check)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	trwifi_result_e tres = TRWIFI_SUCCESS;
 	struct vwifi_req req = {VWIFI_MSG_SETAUTOCONNECT, NULL, tres};
 	int res = _progress_message(&req);
@@ -445,7 +446,7 @@ trwifi_result_e vdev_set_autoconnect(struct netdev *dev, uint8_t check)
 
 trwifi_result_e vdev_drv_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	trwifi_result_e tres = TRWIFI_SUCCESS;
 	struct vwifi_req req = {VWIFI_MSG_IOCTL, msg, tres};
 	int res = _progress_message(&req);
@@ -458,7 +459,7 @@ trwifi_result_e vdev_drv_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 
 int vdev_linkoutput(struct netdev *dev, void *buf, uint16_t dlen)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	vwifi_handle_packet(buf, dlen);
 	return 0;
 }
@@ -466,6 +467,6 @@ int vdev_linkoutput(struct netdev *dev, void *buf, uint16_t dlen)
 int vdev_set_multicast_list(struct netdev *dev, const struct in_addr *group,
 							netdev_mac_filter_action action)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	return 0;
 }

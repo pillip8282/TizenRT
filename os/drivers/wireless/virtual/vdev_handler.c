@@ -30,6 +30,9 @@
 #include <tinyara/net/if/wifi.h>
 #include "vdev_handler.h"
 #include "vdev_command.h"
+#include "vdev_log.h"
+
+#define TAG "[VWIFI]"
 
 extern trwifi_scan_list_s *vwifi_get_scan_list(void);
 extern struct vwifi_ops *get_vdev_ops(void);
@@ -83,7 +86,7 @@ int vwifi_create_event(uint32_t event, int32_t result, int32_t sleep)
 
 	int res = kernel_thread("vwifi_evt", 100, 2048, _generate_evt, argv);
 	if (res == -1) {
-		VWIFI_ERROR(0);
+		VWIFI_LOGE(TAG, "code (%d)\n", 0);
 		return -1;
 	}
 	return 0;
@@ -128,7 +131,7 @@ int vwifi_handle_message(struct vwifi_req *req)
 		req->res = ops->drv_ioctl(req);
 		break;
 	default:
-		VWIFI_ERROR(0);
+		VWIFI_LOGE(TAG, "code (%d)\n", 0);
 		break;
 	}
 	return res;

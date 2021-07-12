@@ -31,7 +31,9 @@
 #include <tinyara/lwnl/lwnl.h>
 #include "vdev_handler.h"
 #include "vdev_command.h"
+#include "vdev_log.h"
 
+#define TAG "[VWIFI]"
 #define WM_NSOFTAP_SSID "no_sta_0101" // for auto test
 
 typedef struct {
@@ -122,77 +124,77 @@ static inline void _check_pending_event(void)
 
 trwifi_result_e vwifi_handle_init(void *req)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	_check_pending_event();
 	return g_vdev_ops_result;
 }
 
 trwifi_result_e vwifi_handle_deinit(void *req)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	_check_pending_event();
 	return g_vdev_ops_result;
 }
 
 trwifi_result_e vwifi_handle_scanap(void *req)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	_check_pending_event();
 	return g_vdev_ops_result;
 }
 
 trwifi_result_e vwifi_handle_connectap(void *req)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	_check_pending_event();
 	return g_vdev_ops_result;
 }
 
 trwifi_result_e vwifi_handle_disconnectap(void *req)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	_check_pending_event();
 	return g_vdev_ops_result;
 }
 
 trwifi_result_e vwifi_handle_getinfo(void *req)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	_check_pending_event();
 	return g_vdev_ops_result;
 }
 
 trwifi_result_e vwifi_handle_startsta(void *req)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	_check_pending_event();
 	return g_vdev_ops_result;
 }
 
 trwifi_result_e vwifi_handle_startsoftap(void *req)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	_check_pending_event();
 	return g_vdev_ops_result;
 }
 
 trwifi_result_e vwifi_handle_stopsoftap(void *req)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	_check_pending_event();
 	return g_vdev_ops_result;
 }
 
 trwifi_result_e vwifi_handle_setautoconnect(void *req)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	_check_pending_event();
 	return g_vdev_ops_result;
 }
 
 trwifi_result_e vwifi_handle_ioctl(void *req)
 {
-	VWIFI_ENTRY;
+	VWIFI_ENTRY(TAG);
 	struct vwifi_req *vreq = (struct vwifi_req *)req;
 	trwifi_msg_s *msg = (trwifi_msg_s *)(vreq->arg);
 	if (!msg) {
