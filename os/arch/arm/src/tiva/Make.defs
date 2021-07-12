@@ -127,9 +127,7 @@ endif
 
 ifeq ($(CONFIG_NET),y)
 ifeq ($(CONFIG_ARCH_CHIP_LM3S),y)
-ifeq ($(CONFIG_NET_NETMGR), y)
-CHIP_CSRCS += lm3s_ethernet_netmgr.c
-else
+ifneq ($(CONFIG_NET_NETMGR), y)
 CHIP_CSRCS += lm3s_ethernet.c
 endif
 endif
