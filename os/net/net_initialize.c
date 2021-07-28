@@ -162,6 +162,7 @@ void net_initialize(void)
 	/* Create tcp_ip stack from lwip thread */
 	tcpip_init(NULL, NULL);
 #endif
+sssssssssssssssssssss
 	return;
 }
 
