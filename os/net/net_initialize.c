@@ -155,7 +155,8 @@ void net_initialize(void)
 {
 #ifdef CONFIG_NET_LOCAL
 	/* Initialize the local, "Unix domain" socket support */
-
+abc
+abc
 	local_initialize();
 #endif
 #ifdef CONFIG_NET_LWIP
