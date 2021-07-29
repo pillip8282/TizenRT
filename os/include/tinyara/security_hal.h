@@ -29,6 +29,7 @@
 /*
  * Common
  */
+#define HAL_DATA_INITIALIZER {0, 0, 0, 0}
 
 /* Enumerator */
 typedef enum {
@@ -36,12 +37,13 @@ typedef enum {
 
 	HAL_NOT_INITIALIZED,
 	HAL_INVALID_ARGS,
+	HAL_INVALID_REQUEST,
 
 	HAL_INVALID_SLOT_RANGE,
 	HAL_INVALID_SLOT_TYPE, //ex. request to save key into cert slot
 	HAL_EMPTY_SLOT,
 
-	HAL_BAD_KEY,
+	HAL_BAD_KEY, // only public key can be returned
 	HAL_BAD_KEY_PAIR, //public and private keys do not match
 	HAL_BAD_CERT,
 	HAL_BAD_CERTKEY_PAIR, //certificate and key do not match
@@ -95,6 +97,7 @@ typedef enum {
 	HAL_ECDSA_SEC_P256R1,
 	HAL_ECDSA_SEC_P384R1,
 	HAL_ECDSA_SEC_P521R1,
+	HAL_ECDSA_CURVE_25519,
 	HAL_ECDSA_UNKNOWN,
 } hal_ecdsa_curve;
 
@@ -138,6 +141,7 @@ typedef enum {
 	HAL_KEY_ECC_SEC_P256R1, // nist curve for p256r1
 	HAL_KEY_ECC_SEC_P384R1, // nist curve for p384r1
 	HAL_KEY_ECC_SEC_P512R1, // nist curve for p512r1
+	HAL_KEY_ECC_25519, // curve25519
 	/*  Hmac */
 	HAL_KEY_HMAC_MD5, // hmac with md5
 	HAL_KEY_HMAC_SHA1, // hmac with sha1
