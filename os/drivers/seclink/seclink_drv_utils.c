@@ -1,5 +1,6 @@
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <tinyara/timer.h>
 #include <netutils/netlib.h>
@@ -21,12 +22,8 @@ int sldrv_start_time(sldrv_timer_handle *hnd)
 int sldrv_get_time(sldrv_timer_handle *hnd)
 {
 	ioctl(hnd->fd, TCIOC_GETSTATUS, (unsigned long)(uintptr_t)&hnd->end);
-	hnd->elapsed = hnd->end.timeleft - hnd->start.timeleft;
-	return 0;
-}
-
-int sldrv_destroy_time(sldrv_timer_handle *hnd)
-{
+	ioctl(hnd->fd, TCIOC_STOP, 0);
 	close(hnd->fd);
+	hnd->elapsed = hnd->end.timeleft - hnd->start.timeleft;
 	return 0;
 }
