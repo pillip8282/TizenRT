@@ -17,7 +17,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <time.h>
-
+#include <errno.h>
 #include "mbedtls/config.h"
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/debug.h"
@@ -227,6 +227,14 @@ int tls_handshake_client(char *ipaddr)
 		 */
 	mbedtls_printf("	< Read from server:");
 	fflush(stdout);
+	uint32_t total = 0;
+
+	printf("[pkbuild] open file\n");
+	FILE *fp = fopen("/mnt/tmp.txt", "w");
+	if (!fp) {
+		printf("fail %d\n", __LINE__);
+		goto exit;
+	}
 
 	do {
 		len = sizeof(buf) - 1;
@@ -250,9 +258,29 @@ int tls_handshake_client(char *ipaddr)
 		}
 
 		len = ret;
-		mbedtls_printf(" %d bytes read\n\n%s", len, (char *)buf);
-	} while (1);
+		//mbedtls_printf(" %d bytes read\n", len);
+		total += len;
+		if ((total % 500 * 1024) == 0) {
+			printf("[pkbuild] written %d delete file\n", total);
+			fclose(fp);
 
+			fp = fopen("/mnt/tmp.txt", "w");
+			if (!fp) {
+				printf("fail %d %d\n", errno, __LINE__);
+				goto exit;
+			}
+		} else {
+			int res = fwrite(buf, sizeof(char), len, fp);
+			if (res != len) {
+				fclose(fp);
+				printf("[pkbuild] fwrite fail %d %d\n", res, errno);
+				goto exit;
+			}
+		}
+	} while (1);
+	fclose(fp);
+
+	mbedtls_printf("\n\n total read %u\n\n\n", total);
 	mbedtls_ssl_close_notify(&ssl);
 
 exit:

@@ -27,10 +27,6 @@
 #include <ocstack.h>
 #include "uuid/uuid.h"
 
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-extern struct netif *g_netdevices;
-#endif
-
 void uuid_generate_random(uuid_t out)
 {
 	int i = 0;
@@ -53,34 +49,6 @@ void uuid_unparse_lower(const uuid_t uu, char *out)
 {
 	snprintf(out, 37 /* UUID_STRING_SIZE */ ,
 			 "%02x%02x%02x%02x-" "%02x%02x-" "%02x%02x-" "%02x%02x-" "%02x%02x%02x%02x%02x%02x", uu[0], uu[1], uu[2], uu[3], uu[4], uu[5], uu[6], uu[7], uu[8], uu[9], uu[10], uu[11], uu[12], uu[13], uu[14], uu[15]);
-}
-
-int getifaddrs(struct ifaddrs **ifap)
-{
-	static struct ifaddrs ifa;
-	static struct sockaddr_in addr, netmask;
-	uint8_t flags;
-
-	memset(&ifa, 0, sizeof(ifa));
-	memset(&addr, 0, sizeof(addr));
-	memset(&netmask, 0, sizeof(netmask));
-
-	struct netif *curr = g_netdevices;
-
-	netlib_get_ipv4addr(curr->d_ifname, &addr.sin_addr);
-	netlib_get_dripv4addr(curr->d_ifname, &netmask.sin_addr);
-	netlib_getifstatus(curr->d_ifname, &flags);
-
-	ifa.ifa_next = NULL;
-	ifa.ifa_name = curr->d_ifname;
-	ifa.ifa_flags = flags | IFF_RUNNING;
-	addr.sin_family = netmask.sin_family = AF_INET;
-	ifa.ifa_addr = (struct sockaddr *)&addr;
-	ifa.ifa_netmask = (struct sockaddr *)&netmask;
-
-	*ifap = &ifa;
-
-	return 0;
 }
 
 unsigned int if_nametoindex(const char *ifname)

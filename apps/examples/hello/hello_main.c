@@ -56,10 +56,18 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <pthread.h>
 
 /****************************************************************************
  * hello_main
  ****************************************************************************/
+
+void *sender_thread(void *arg)
+{
+	for (int i = 0; i < 5; i++) {
+		printf("[pkbuild] pthread create %d\n", getpid());
+	}
+}
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -67,6 +75,18 @@ int main(int argc, FAR char *argv[])
 int hello_main(int argc, char *argv[])
 #endif
 {
-	printf("Hello, World!!\n");
+	if (argc == 2) {
+		while (1) {
+			pthread_t sender;
+			int ret = pthread_create(&sender, NULL, sender_thread, NULL);
+			if (ret != 0) {
+				printf("[pkbuild] pthread create fail\n");
+				return -1;
+			}
+			pthread_join(sender, NULL);
+		}
+	} else {
+		printf("Hello, World!!\n");
+	}
 	return 0;
 }
