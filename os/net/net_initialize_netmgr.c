@@ -15,8 +15,8 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #include <tinyara/config.h>
+
 #include <tinyara/kmalloc.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
