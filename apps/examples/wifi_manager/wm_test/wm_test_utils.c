@@ -24,10 +24,9 @@
 #include <errno.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wm_test_utils.h"
-#include "wm_test_log.h"
-
-#define TAG "[WU]"
-/* queue */
+/*
+ * queue
+ */
 #define WO_QUEUE_SIZE 10
 #define WO_QUEUE_LOCK(lock)						\
 	do {										\
@@ -91,13 +90,13 @@ struct wo_queue *wo_create_queue(void)
 	}
 	int res = sem_init(&queue->lock, 0, 1);
 	if (res < 0) {
-		WT_LOGE(TAG, "fail to initialize lock %d", errno);
+		printf("[WO] fail to initialize lock %d\n", errno);
 		free(queue);
 		return NULL;
 	}
 	res = sem_init(&queue->signal, 0, 0);
 	if (res < 0) {
-		WT_LOGE(TAG, "fail to intiailize signal", errno);
+		printf("[WO] fail to intiailize signal\n", errno);
 		sem_destroy(&queue->lock);
 		free(queue);
 	}
