@@ -21,9 +21,17 @@
 
 #include <tinyara/config.h>
 
-#include <time.h>
+#include <mqueue.h>
+#include <pthread.h>
+
 #include <tinyara/wifi/wifi_common.h>
-#include <tinyara/net/if/wifi.h>
+
+#ifdef CONFIG_LWNL80211
+struct _wifi_utils_s {
+	char mqname[16];
+	pid_t cb_receiver;
+};
+#endif
 
 /**
  * @brief wifi interface init

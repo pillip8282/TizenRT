@@ -217,6 +217,7 @@ int nm_ifup(struct netdev *dev)
 		ndbg("fail to up network interface\n");
 		return -1;
 	}
+	
 	return 0;
 }
 
