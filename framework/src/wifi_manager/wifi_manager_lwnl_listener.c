@@ -23,6 +23,8 @@
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
+#include <tinyara/wifi/wifi_utils.h>
+#include "wifi_manager_lwnl_listener.h"
 #include "wifi_manager_dhcp.h"
 #include "wifi_manager_event.h"
 #include "wifi_manager_msghandler.h"
@@ -31,24 +33,24 @@
 
 #define TAG "[WM]"
 
-static int _lwnl_convert_scan(trwifi_scan_list_s **scan_list, void *input, int len)
+static int _lwnl_convert_scan(wifi_utils_scan_list_s **scan_list, void *input, int len)
 {
 	NET_LOGV(TAG, "len(%d)\n", len);
 	int remain = len;
-	trwifi_scan_list_s *prev = NULL;
+	wifi_utils_scan_list_s *prev = NULL;
 
 	while (remain > 0) {
-		trwifi_scan_list_s *item = (trwifi_scan_list_s *)malloc(sizeof(trwifi_scan_list_s));
+		wifi_utils_scan_list_s *item = (wifi_utils_scan_list_s *)malloc(sizeof(wifi_utils_scan_list_s));
 		if (!item) {
-			assert(0); // out of memory
+			// To Do
 			return -1;
 		}
-		// definition of trwifi_scan_list_s and lwnl80211_scan_list shoud be same
-		memcpy(&item->ap_info, input, sizeof(trwifi_ap_scan_info_s));
+		// definition of wifi_utils_scan_list_s and lwnl80211_scan_list shoud be same
+		memcpy(&item->ap_info, input, sizeof(wifi_utils_ap_scan_info_s));
 		item->next = NULL;
 
-		remain -= sizeof(trwifi_ap_scan_info_s);
-		input = input + sizeof(trwifi_ap_scan_info_s);
+		remain -= sizeof(wifi_utils_ap_scan_info_s);
+		input = input + sizeof(wifi_utils_ap_scan_info_s);
 		if (!prev) {
 			prev = item;
 			*scan_list = item;
@@ -61,7 +63,7 @@ static int _lwnl_convert_scan(trwifi_scan_list_s **scan_list, void *input, int l
 	return 0;
 }
 
-static trwifi_scan_list_s *_lwnl_handle_scan(int fd, int len)
+static wifi_utils_scan_list_s *_lwnl_handle_scan(int fd, int len)
 {
 	char *buf = (char *)malloc(len);
 	if (!buf) {
@@ -75,7 +77,7 @@ static trwifi_scan_list_s *_lwnl_handle_scan(int fd, int len)
 		return NULL;
 	}
 
-	trwifi_scan_list_s *scan_list = NULL;
+	wifi_utils_scan_list_s *scan_list = NULL;
 	res = _lwnl_convert_scan(&scan_list, buf, len);
 	free(buf);
 	if (res < 0) {
@@ -124,7 +126,7 @@ static int _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 		break;
 	case LWNL_EVT_SCAN_DONE:
 	{
-		trwifi_scan_list_s *scan_list = _lwnl_handle_scan(fd, len);
+		wifi_utils_scan_list_s *scan_list = _lwnl_handle_scan(fd, len);
 		if (scan_list) {
 			LWNL_SET_MSG(&g_msg, WIFIMGR_EVT_SCAN_DONE, WIFI_MANAGER_FAIL, scan_list, NULL);
 		} else {

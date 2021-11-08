@@ -25,7 +25,7 @@
 #include <arpa/inet.h>
 #include <wifi_manager/wifi_manager.h>
 #include <tinyara/net/netlog.h>
-#include <tinyara/net/if/wifi.h>
+#include <tinyara/wifi/wifi_common.h>
 #include "wifi_manager_utils.h"
 #include "wifi_manager_profile.h"
 #include "wifi_manager_dhcp.h"
@@ -36,7 +36,6 @@
 #include "wifi_manager_cb.h"
 #include "wifi_manager_state.h"
 #include "wifi_manager_info.h"
-#include "wifi_manager_lwnl.h"
 
 /*  Setting MACRO */
 static inline void WIFIMGR_SET_SSID(char *s)
@@ -82,6 +81,8 @@ static inline void WIFIMGR_SET_SOFTAP_SSID(char *s)
 struct _wifimgr_state_handle {
 	wifimgr_state_e state;
 	wifimgr_state_e prev_state; // it is for returning to previous sta state after scanning is done
+	// event
+	wifimgr_evt_handler_s cbk;
 	// substate
 	_wifimgr_disconn_substate_e disconn_substate;
 	sem_t *api_sig;
@@ -92,6 +93,8 @@ typedef struct _wifimgr_state_handle _wifimgr_state_handle_s;
 /* global variables*/
 static _wifimgr_state_handle_s g_manager_info = {
 	WIFIMGR_UNINITIALIZED, WIFIMGR_UNINITIALIZED, // state, prev_state
+	// event
+	WIFIMGR_EVENT_INITIALIZER,
 	// substate
 	WIFIMGR_DISCONN_NONE, // _wifimgr_disconn_substate_e
 	NULL,
@@ -144,8 +147,6 @@ static char *wifimgr_state_str[] = {
 
 #define TAG "[WM]"
 
-
-
 static inline void WIFIMGR_SET_STATE(wifimgr_state_e s)
 {
 	g_manager_info.state = s;
@@ -180,9 +181,9 @@ static inline void WIFIMGR_SEND_API_SIGNAL(sem_t *api_sig)
 	}
 }
 
-static void _free_scan_list(trwifi_scan_list_s *scan_list)
+static void _free_scan_list(wifi_utils_scan_list_s *scan_list)
 {
-	trwifi_scan_list_s *iter = scan_list, *prev = NULL;
+	wifi_utils_scan_list_s *iter = scan_list, *prev = NULL;
 	while (iter) {
 		prev = iter;
 		iter = iter->next;
@@ -192,7 +193,7 @@ static void _free_scan_list(trwifi_scan_list_s *scan_list)
 
 wifi_manager_result_e _wifimgr_deinit(void)
 {
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_deinit(), TAG, "wifi_utils_deinit fail");
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_deinit(), TAG, "wifi_utils_deinit fail", WIFI_MANAGER_FAIL);
 	wifimgr_unregister_all();
 
 	return WIFI_MANAGER_SUCCESS;
@@ -200,11 +201,11 @@ wifi_manager_result_e _wifimgr_deinit(void)
 
 wifi_manager_result_e _wifimgr_run_sta(void)
 {
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_sta(), TAG, "Starting STA failed.");
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_sta(), TAG, "Starting STA failed.", WIFI_MANAGER_FAIL);
 #ifdef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(0), TAG, "Set Autoconnect failed");
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(0), TAG, "Set Autoconnect failed", WIFI_MANAGER_FAIL);
 #else
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(1), TAG, "Set Autoconnect failed");
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(1), TAG, "Set Autoconnect failed", WIFI_MANAGER_FAIL);
 #endif
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -212,8 +213,8 @@ wifi_manager_result_e _wifimgr_run_sta(void)
 wifi_manager_result_e _wifimgr_save_connected_config(wifi_manager_ap_config_s *config)
 {
 #ifdef CONFIG_WIFI_MANAGER_SAVE_CONFIG
-	trwifi_result_e ret = wifi_profile_write(config, 1);
-	if (ret != TRWIFI_SUCCESS) {
+	wifi_utils_result_e ret = wifi_profile_write(config, 1);
+	if (ret != WIFI_UTILS_SUCCESS) {
 		NET_LOGE(TAG, "Failed to save the connected AP configuration in file system\n");
 		return WIFI_MANAGER_FAIL;
 	}
@@ -223,7 +224,7 @@ wifi_manager_result_e _wifimgr_save_connected_config(wifi_manager_ap_config_s *c
 
 wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 {
-	trwifi_ap_config_s util_config;
+	wifi_utils_ap_config_s util_config;
 	strncpy(util_config.ssid, config->ssid, WIFIMGR_SSID_LEN);
 	util_config.ssid[WIFIMGR_SSID_LEN] = '\0';
 	util_config.ssid_length = config->ssid_length;
@@ -233,10 +234,10 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 	util_config.ap_auth_type = config->ap_auth_type;
 	util_config.ap_crypto_type = config->ap_crypto_type;
 
-	trwifi_result_e wres = wifi_utils_connect_ap(&util_config, NULL);
-	if (wres == TRWIFI_ALREADY_CONNECTED) {
+	wifi_utils_result_e wres = wifi_utils_connect_ap(&util_config, NULL);
+	if (wres == WIFI_UTILS_ALREADY_CONNECTED) {
 		return WIFI_MANAGER_ALREADY_CONNECTED;
-	} else if (wres != TRWIFI_SUCCESS) {
+	} else if (wres != WIFI_UTILS_SUCCESS) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}
@@ -252,7 +253,7 @@ wifi_manager_result_e _wifimgr_connect_ap(wifi_manager_ap_config_s *config)
 
 wifi_manager_result_e _wifimgr_disconnect_ap(void)
 {
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_disconnect_ap(NULL), TAG, "disconnect to ap fail");
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_disconnect_ap(NULL), TAG, "disconnect to ap fail", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
 }
 
@@ -262,11 +263,11 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 		NET_LOGE(TAG, "SSID or PASSPHRASE length invalid\n");
 		return WIFI_MANAGER_FAIL;
 	}
-	trwifi_softap_config_s softap_config;
+	wifi_utils_softap_config_s softap_config;
 
 	softap_config.channel = config->channel;
-	softap_config.ap_crypto_type = TRWIFI_CRYPTO_AES;
-	softap_config.ap_auth_type = TRWIFI_AUTH_WPA2_PSK;
+	softap_config.ap_crypto_type = WIFI_UTILS_CRYPTO_AES;
+	softap_config.ap_auth_type = WIFI_UTILS_AUTH_WPA2_PSK;
 	softap_config.ssid_length = strlen(config->ssid);
 	softap_config.passphrase_length = strlen(config->passphrase);
 	strncpy(softap_config.ssid, config->ssid, WIFIMGR_SSID_LEN);
@@ -275,9 +276,10 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 	softap_config.passphrase[WIFIMGR_PASSPHRASE_LEN] = '\0';
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_start_softap(&softap_config),
-							 TAG, "Starting softap mode failed");
+							 TAG, "Starting softap mode failed", WIFI_MANAGER_FAIL);
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
-	WIFIMGR_CHECK_RESULT(wm_dhcps_start(), (TAG, "Starting DHCP server failed\n"), WIFI_MANAGER_FAIL);
+	WIFIMGR_CHECK_RESULT(wm_dhcps_start((dhcp_sta_joined_cb)g_manager_info.cbk.dhcps_sta_joined),
+						 (TAG, "Starting DHCP server failed\n"), WIFI_MANAGER_FAIL);
 #endif
 	/* update wifi_manager_info */
 	WIFIMGR_SET_SOFTAP_SSID(config->ssid);
@@ -290,7 +292,7 @@ wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *config)
 
 wifi_manager_result_e _wifimgr_stop_softap(void)
 {
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_stop_softap(), TAG, "Stoping softap failed");
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_stop_softap(), TAG, "Stoping softap failed", WIFI_MANAGER_FAIL);
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
 	WIFIMGR_CHECK_RESULT(wm_dhcps_stop(), (TAG, "Stoping softap DHCP server failed.\n"), WIFI_MANAGER_FAIL);
 #endif
@@ -301,7 +303,7 @@ wifi_manager_result_e _wifimgr_scan(wifi_manager_scan_config_s *config)
 {
 	if (!config) {
 		WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_ap(NULL), TAG,
-								 "request scan to wifi utils is fail");
+								 "request full scan is fail", WIFI_MANAGER_FAIL);
 		return WIFI_MANAGER_SUCCESS;
 	}
 
@@ -328,21 +330,28 @@ wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 		return WIFI_MANAGER_FAIL;
 	}
 
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_init(), TAG, "wifi_utils_init fail");
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_init(), TAG, "wifi_utils_init fail", WIFI_MANAGER_FAIL);
 
 #ifdef CONFIG_WIFI_MANAGER_SAVE_CONFIG
-	WIFIMGR_CHECK_UTILRESULT(wifi_profile_init(), TAG, "wifi_profile init fail");
+	WIFIMGR_CHECK_UTILRESULT(wifi_profile_init(), TAG, "wifi_profile init fail", WIFI_MANAGER_FAIL);
 #endif
+	/*  get event function pointers from event handler */
+	int res = wifimgr_get_evthandler(&g_manager_info.cbk);
+	if (res < 0) {
+		NET_LOGE(TAG, "WIFIMGR GET EVENT\n");
+	}
+	wifi_utils_register_callback(&g_manager_info.cbk.wifi_evt);
+
 	/*  register default callback to callback handler */
 	wifi_manager_cb_s *cb = (wifi_manager_cb_s *)msg->param;
-	int res = wifimgr_register_cb(cb);
+	res = wifimgr_register_cb(cb);
 	if (res < 0) {
 		NET_LOGE(TAG, "WIFIMGR REGISTER CB\n");
 	}
 #ifdef CONFIG_DISABLE_EXTERNAL_AUTOCONNECT
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(0), TAG, "Set Autoconnect failed");
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(0), TAG, "Set Autoconnect failed", WIFI_MANAGER_FAIL);
 #else
-	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(1), TAG, "Set Autoconnect failed");
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_set_autoconnect(1), TAG, "Set Autoconnect failed", WIFI_MANAGER_FAIL);
 #endif
 
 	WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
@@ -393,7 +402,7 @@ wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 	}
 
 	if (msg->event == WIFIMGR_EVT_SCAN_DONE) {
-		_free_scan_list((trwifi_scan_list_s *)msg->param);
+		_free_scan_list((wifi_utils_scan_list_s *)msg->param);
 	}
 
 	/* it handles disconnecting state differently by substate
@@ -540,7 +549,7 @@ wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg)
 	wifi_manager_result_e wret = WIFI_MANAGER_FAIL;
 	if (msg->event == WIFIMGR_EVT_SCAN_DONE) {
 		wifimgr_call_cb(CB_SCAN_DONE, msg->param);
-		_free_scan_list((trwifi_scan_list_s *)msg->param);
+		_free_scan_list((wifi_utils_scan_list_s *)msg->param);
 		WIFIMGR_RESTORE_STATE;
 		wret = WIFI_MANAGER_SUCCESS;
 	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
@@ -555,10 +564,13 @@ wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg)
 
 wifi_manager_result_e _handler_get_stats(wifimgr_msg_s *msg)
 {
+	wifi_manager_result_e wret = WIFI_MANAGER_SUCCESS;
 	trwifi_msg_stats_s stats;
 	stats.cmd = TRWIFI_MSG_GET_STATS;
-	trwifi_result_e res = wifi_utils_ioctl(&stats);
-	if (res == TRWIFI_SUCCESS) {
+	wifi_utils_result_e res = wifi_utils_ioctl(&stats);
+	if (res != WIFI_UTILS_SUCCESS) {
+		wret = WIFI_MANAGER_FAIL;
+	} else {
 		/* update msg
 		 * msg->param was checked in wifi_manager_get_stats()
 		 * So doesn't need to check msg->param in here.
@@ -579,7 +591,7 @@ wifi_manager_result_e _handler_get_stats(wifimgr_msg_s *msg)
 		wstats->rssi_max = stats.rssi_max;
 		wstats->beacon_miss_cnt = stats.beacon_miss_cnt;
 	}
-	return wifimgr_convert_trwifi(res);
+	return wret;
 }
 
 wifi_manager_result_e _handler_set_powermode(wifimgr_msg_s *msg)
@@ -590,8 +602,12 @@ wifi_manager_result_e _handler_set_powermode(wifimgr_msg_s *msg)
 		imode = TRWIFI_POWERMODE_ON;
 	}
 	trwifi_msg_s tmsg = {TRWIFI_MSG_SET_POWERMODE, (void *)(&imode)};
-	trwifi_result_e res = wifi_utils_ioctl(&tmsg);
-	return wifimgr_convert_trwifi(res);
+	wifi_utils_result_e res = wifi_utils_ioctl(&tmsg);
+	if (res != WIFI_UTILS_SUCCESS) {
+		NET_LOGE(TAG, "set power mode fail %d\n", res);
+		return WIFI_MANAGER_FAIL;
+	}
+	return WIFI_MANAGER_SUCCESS;
 }
 
 wifi_manager_result_e wifimgr_handle_request(wifimgr_msg_s *msg)

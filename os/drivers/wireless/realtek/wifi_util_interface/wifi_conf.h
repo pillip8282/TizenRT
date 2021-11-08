@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <tinyara/wifi/wifi_common.h>
 #include <tinyara/wifi/rtk/wifi_constants.h>
 #include <tinyara/wifi/rtk/wifi_structures.h>
 

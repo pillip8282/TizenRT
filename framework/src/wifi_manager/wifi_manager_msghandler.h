@@ -15,7 +15,9 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#pragma once
+
+#ifndef _WIFI_MGR_MESSAGE_QUEUE_H__
+#define _WIFI_MGR_MESSAGE_QUEUE_H__
 
 struct wifimgr_msg {
 	wifimgr_evt_e event;
@@ -28,3 +30,6 @@ typedef struct wifimgr_msg wifimgr_msg_s;
 // application doesn't need to get messages from queue
 // int wifimgr_get_message(struct wifimgr_msg *msg, int flag);
 int wifimgr_post_message(wifimgr_msg_s *msg);
+
+#endif // _WIFI_MGR_MESSAGE_QUEUE_H__
+
