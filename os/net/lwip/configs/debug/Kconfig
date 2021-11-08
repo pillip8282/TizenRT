@@ -219,6 +219,12 @@ config NET_ND6_DEBUG
 	---help---
 		Enable debugging for ND6.
 
+config NET_DNS_DEBUG
+	bool "Enable DNS Debugging"
+	default n
+	---help---
+		Enable debugging for DNS.
+
 endif #LWIP_DEBUG
 
 endmenu #"Debug Options for Network"

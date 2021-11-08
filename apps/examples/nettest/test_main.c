@@ -29,6 +29,36 @@
 
 static char g_hostname[NT_MAXHOST]; // stack overflow can be happened if set this value local variable.
 static char g_serv[NT_MAXSERV];
+static char *g_host_list[] = {
+	"www.google.com",
+	"www.facebook.com",
+	"www.naver.com",
+	"www.daum.net",
+};
+
+static void _print_result(char *hostname, struct addrinfo *local_res)
+{
+	struct addrinfo *ainfo = NULL;
+	printf("Host: %s\n", hostname);
+	for (ainfo = local_res; ainfo != NULL; ainfo = ainfo->ai_next) {
+		printf("family %s\n", ((ainfo->ai_family == AF_INET) ? "AF_INET" : "Not IPv4"));
+		if (ainfo->ai_family != AF_INET) {
+			printf("not interesting type %d\n", ainfo->ai_family);
+			continue;
+		}
+		struct sockaddr_in *dst = (struct sockaddr_in *)ainfo->ai_addr;
+		struct in_addr info_addr = dst->sin_addr;
+		uint8_t addr[4] = {
+			0,
+		};
+		addr[0] = info_addr.s_addr & 0xFF;
+		addr[1] = (info_addr.s_addr >> 8) & 0xFF;
+		addr[2] = (info_addr.s_addr >> 16) & 0xFF;
+		addr[3] = (info_addr.s_addr >> 24) & 0xFF;
+		printf("%d.%d.%d.%d\n", addr[0], addr[1], addr[2], addr[3]);
+	}
+	printf("\n");
+}
 
 static void _print_addrinfo(struct addrinfo *addr)
 {
@@ -239,26 +269,56 @@ START_TEST_F(set_dns_n)
 }
 END_TEST_F
 
+START_TEST_F(dns_queue)
+{
+	struct sockaddr_in dns_addr;
+	memset(&dns_addr, 0x0, sizeof(struct sockaddr_in));
+	dns_addr.sin_family = AF_INET;
+	inet_pton(AF_INET, NT_STR_DNS_ADDR, (void *)&dns_addr.sin_addr);
+	int res = netlib_setdnsserver((struct sockaddr *)&dns_addr, -1);
+	ST_EXPECT_EQ(0, res);
+
+	struct addrinfo hints, *local_res;
+	int arr_size = sizeof(g_host_list) / sizeof(char *);
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	for (int i = 0; i < arr_size; i++) {
+		res = getaddrinfo(g_host_list[i], NULL, &hints, &local_res);
+		ST_EXPECT_EQ(0, res);
+		_print_result(g_host_list[i], local_res);
+		freeaddrinfo(local_res);
+	}
+	sleep(1);
+}
+END_TEST_F
+
 int network_internal_test(void)
 {
+#if 0
 	ST_SET_PACK(nettest);
-
 	ST_SET_SMOKE1(nettest, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "getaddrinfo p", getaddrinfo_p);
 	ST_SET_SMOKE1(nettest, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "getaddrinfo n", getaddrinfo_n);
 	ST_SET_SMOKE1(nettest, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "gethostbyname p", gethostbyname_p);
 	ST_SET_SMOKE1(nettest, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "gethostbyname n", gethostbyname_n);
 	ST_SET_SMOKE1(nettest, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "getnameinfo p", getnameinfo_p);
 	ST_SET_SMOKE1(nettest, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "getnameinfo n", getnameinfo_n);
-
-	ST_SET_SMOKE1(nettest, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "get sock info from netmon", netmon_sock);
-	ST_SET_SMOKE1(nettest, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "get statistics from netmon", netmon_stats);
-	ST_SET_SMOKE1(nettest, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "get NIC statistics", netmon_dev_stats);
-
-	ST_SET_SMOKE1(nettest, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "set dns positive", set_dns_p);
-	ST_SET_SMOKE1(nettest, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "set dns negative", set_dns_n);
-
 	ST_RUN_TEST(nettest);
 	ST_RESULT_TEST(nettest);
+
+	ST_SET_PACK(netmon);
+	ST_SET_SMOKE1(netmon, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "get sock info from netmon", netmon_sock);
+	ST_SET_SMOKE1(netmon, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "get statistics from netmon", netmon_stats);
+	ST_SET_SMOKE1(netmon, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "get NIC statistics", netmon_dev_stats);
+	ST_RUN_TEST(netmon);
+	ST_RESULT_TEST(netmon);
+#endif
+
+	ST_SET_PACK(dns);
+	//ST_SET_SMOKE1(dns, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "set dns positive", set_dns_p);
+	//ST_SET_SMOKE1(dns, NT_TEST_TRIAL, ST_NO_TIMELIMIT, "set dns negative", set_dns_n);
+	ST_SET_SMOKE1(dns, 10000, ST_NO_TIMELIMIT, "set dns negative", dns_queue);
+	ST_RUN_TEST(dns);
+	ST_RESULT_TEST(dns);
 
 	return 0;
 }

@@ -134,7 +134,7 @@ static u16_t dns_txid;
 
 /** DNS resource record max. TTL (one week as default) */
 #ifndef DNS_MAX_TTL
-#define DNS_MAX_TTL               604800
+#define DNS_MAX_TTL               30 // pkbuild to test dns 
 #elif DNS_MAX_TTL > 0x7FFFFFFF
 #error DNS_MAX_TTL must be a positive 32-bit value
 #endif
