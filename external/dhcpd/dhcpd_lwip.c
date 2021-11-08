@@ -108,11 +108,10 @@ static int _send_mqmsg(mqd_t mq, char *msg, size_t msglen, int prio)
 	while (1) {
 		int mq_ret = mq_send(mq, msg, msglen, prio);
 		if (mq_ret == ERROR) {
-			int err_no = get_errno();
-			if (err_no == EINTR || err_no == EAGAIN) {
+			if (errno == EAGAIN || errno == EINTR) {
 				continue;
 			}
-			ndbg("dhcps _send_mqmsg error %d\n", err_no);
+			ndbg("dhcps _send_mqmsg error %d\n", errno);
 			return -1;
 		}
 		nvdbg("dhcps sent res %d sent %d\n", mq_ret, msglen);
@@ -127,19 +126,16 @@ static int _recv_mqmsg(mqd_t mq, char *msg, size_t msglen, int *prio)
 	while (1) {
 		int mq_ret = mq_receive(mq, msg, msglen, prio);
 		if (mq_ret == -1) {
-			int err_no = get_errno();
-			if (err_no == EINTR || err_no == EAGAIN) {
+			if (errno == EAGAIN && errno == EINTR) {
 				continue;
 			}
-			ndbg("dhcps error %d\n", err_no);
+			ndbg("dhcps _recv_mqmsg error %d\n", errno);
 			return -1;
 		}
 		if (mq_ret == msglen) {
-			nvdbg("dhcps recv message size (%d)\n", mq_ret);
 			break;
 		} else {
 			ndbg("dhcps critical error %d %d\n", mq_ret, msglen);
-			assert(0);
 		}
 	}
 	return 0;
@@ -172,15 +168,10 @@ static void _empty_mq(mqd_t mq)
 		ts.tv_sec = 0;
 		int nbytes = mq_timedreceive(mq, msg, DHCPD_MQ_LEN, 0, &ts);
 		if (nbytes == -1) {
-			int err_no = get_errno();
-			nvdbg("dhcps empty dhcps message queue errno %d\n", err_no);
-			if (err_no == ETIMEDOUT) {
+			if (errno == ETIMEDOUT) {
 				break;
-			} else if (err_no == EINTR || err_no == EAGAIN) {
-				continue;
 			} else {
-				ndbg("dhcps critical error errno %d\n", err_no);
-				assert(0);
+				nvdbg("dhcps empty dhcps message queue errno %d\n", errno);
 			}
 		}
 		nvdbg("received msg length(%d) msg(%d)\n", nbytes, msg[0]);
@@ -213,11 +204,11 @@ static void _delete_mq(mqd_t mq)
 		ndbg("dhcps fail to delete mq\n");
 		return;
 	}
+	nvdbg("dhcps delete mq\n");
 }
 
 void *_dhcpd_join_handler(void *arg)
 {
-	nvdbg("dhcps dhcps start join handler (app)\n");
 	dhcp_join_data_s *data = (dhcp_join_data_s *)arg;
 	int ret = ERROR;
 	int sockfd = 0;
@@ -269,7 +260,6 @@ go_out:
 	if (sockfd > 0) {
 		close(sockfd);
 	}
-	nvdbg("exit dhcps join handler (app)\n");
 	return NULL;
 }
 
@@ -311,7 +301,6 @@ int dhcp_server_status(char *intf)
  ****************************************************************************/
 int dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
 {
-	nvdbg("dhcps start dhcp server\n");
 	pthread_attr_t attr;
 	struct sched_param sparam;
 	int ret = ERROR;
@@ -358,10 +347,24 @@ int dhcp_server_start(char *intf, dhcp_sta_joined_cb dhcp_join_cb)
  ****************************************************************************/
 int dhcp_server_stop(char *intf)
 {
-	nvdbg("dhcps stop dhcp server\n");
 	int ret = ERROR;
 	struct req_lwip_data req;
 	mqd_t md = (mqd_t)-1;
+
+	_create_mq(&md);
+
+	nvdbg("dhcps send terminate msg\n");
+	char msg[DHCPD_MQ_LEN] = {0}; // terminate thread message
+	int mq_ret = _send_mqmsg(md, msg, DHCPD_MQ_LEN, 100);
+	if (mq_ret == 0) {
+		nvdbg("dhcps send success\n");
+		pthread_join(g_dhcpd_tid, NULL);
+	} else {
+		ndbg("dhcps send mq fail\n");
+		assert(0);
+	}
+
+	_delete_mq(md);
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
@@ -382,21 +385,6 @@ int dhcp_server_stop(char *intf)
 
 	ret = req.req_res;
 	close(sockfd);
-
-	_create_mq(&md);
-
-	nvdbg("dhcps send terminate msg\n");
-	char msg[DHCPD_MQ_LEN] = {0}; // terminate thread message
-	int mq_ret = _send_mqmsg(md, msg, DHCPD_MQ_LEN, 100);
-	if (mq_ret == 0) {
-		nvdbg("dhcps send success\n");
-		pthread_join(g_dhcpd_tid, NULL);
-	} else {
-		ndbg("dhcps send mq critical error\n");
-		assert(0);
-	}
-
-	_delete_mq(md);
 
 	return ret;
 }
