@@ -15,7 +15,9 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#pragma once
+
+#ifndef __TIZENRT_NETDEV_MGR_INTERNAL_H__
+#define __TIZENRT_NETDEV_MGR_INTERNAL_H__
 
 #define NETDEV_IP 1
 #define NETDEV_GW 2
@@ -55,7 +57,6 @@ struct netdev_ops {
 	int (*get_ip4addr)(struct netdev *dev, struct sockaddr *addr, int type);
 	int (*set_ip4addr)(struct netdev *dev, struct sockaddr *addr, int type);
 	int (*set_ip6addr)(struct netdev *dev, struct sockaddr_storage *addr, int type);
-	int (*set_ip6addr_type)(struct netdev *dev, uint8_t type);
 	int (*get_ifaddrs)(struct netdev *dev, struct ifaddrs **addrs);
 	int (*delete_ipaddr)(struct netdev *dev);
 
@@ -101,3 +102,5 @@ int nm_foreach(tr_netdev_callback_t callback, void *arg);
 int nm_count(void);
 int nm_ifup(struct netdev *dev);
 int nm_ifdown(struct netdev *dev);
+
+#endif // __TIZENRT_NETDEV_MGR_INTERNAL_H__
