@@ -15,9 +15,11 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#pragma once
 
-#include <tinyara/net/netlog.h>
+#ifndef _WIFI_MANAGER_UTILS_H_
+#define _WIFI_MANAGER_UTILS_H_
+
+#include "wifi_manager_log.h"
 #include "wifi_manager_error.h"
 
 /*  Check Result MACRO */
@@ -26,7 +28,7 @@
 	do {														\
 		wifi_manager_result_e wmres = func;						\
 		if (wmres != WIFI_MANAGER_SUCCESS) {					\
-			NET_LOGE msg;										\
+			WM_LOG_ERROR(msg);											\
 			free_rsc;											\
 			return ret;											\
 		}														\
@@ -38,7 +40,7 @@
 	do {													\
 		wifi_manager_result_e wmres = func;					\
 		if (wmres != WIFI_MANAGER_SUCCESS) {				\
-			NET_LOGE msg;									\
+			WM_LOG_ERROR(msg);										\
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_API_FAIL);       \
 			free_rsc;										\
 			return wmres;									\
@@ -52,19 +54,22 @@
 		wifi_manager_result_e wmres = func;				\
 		if (wmres != WIFI_MANAGER_SUCCESS) {			\
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_API_FAIL);	\
-			NET_LOGE msg;\
+			WM_LOG_ERROR(msg);									\
 		}												\
 	} while (0)											\
 
-#define WIFIMGR_CHECK_UTILRESULT(func, tag, msg, ret)	\
+#define WIFIMGR_CHECK_UTILRESULT(func, msg, ret)		\
 	do {												\
 		wifi_utils_result_e wmres = func;				\
 		if (wmres != WIFI_UTILS_SUCCESS) {				\
-			NET_LOGE(TAG, msg " reason(%d)\n", wmres);			\
+			WM_LOG_ERROR(msg);									\
+			WM_LOG_ERROR("error code(%d)\n", wmres);			\
 			WIFIADD_ERR_RECORD(ERR_WIFIMGR_UTILS_FAIL);	\
 			return ret;									\
 		}												\
 	} while (0)
+
+
 
 /*  Network Interface Card name definition */
 #define WIFIMGR_SOFTAP_IFNAME CONFIG_WIFIMGR_SOFTAP_IFNAME
@@ -76,3 +81,5 @@ struct _wifimgr_conn_info_msg {
 	int fd;
 };
 typedef struct _wifimgr_conn_info_msg _wifimgr_conn_info_msg_s;
+
+#endif // _WIFI_MANAGER_UTILS_H_

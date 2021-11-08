@@ -22,13 +22,10 @@
 #include <string.h>
 #include <sys/types.h>
 #include <netutils/netlib.h>
-#include <tinyara/net/netlog.h>
 #include <wifi_manager/wifi_manager.h>
 #include "wifi_manager_utils.h"
 #include "wifi_manager_error.h"
 #include "wifi_manager_dhcp.h"
-
-#define TAG "[WM]"
 
 /**
  * Internal DHCP client APIs
@@ -43,17 +40,17 @@ wifi_manager_result_e dhcpc_get_ipaddr(void)
 	ret = dhcp_client_start(WIFIMGR_STA_IFNAME);
 	if (ret != OK) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
-		NET_LOGE(TAG, "[DHCPC] get IP address fail\n");
+		WM_LOG_ERROR("[DHCPC] get IP address fail\n");
 		return wret;
 	}
 
 	ret = netlib_get_ipv4addr(WIFIMGR_STA_IFNAME, &ip);
 	if (ret != OK) {
-		NET_LOGE(TAG, "[DHCPC] get IP address fail\n");
+		WM_LOG_ERROR("[DHCPC] get IP address fail\n");
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 		return wret;
 	}
-	NET_LOGV(TAG, "[DHCPC] get IP address %s\n", inet_ntoa(ip));
+	WM_LOG_INFO("[DHCPC] get IP address %s\n", inet_ntoa(ip));
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -68,14 +65,14 @@ void dhcpc_close_ipaddr(void)
 	struct in_addr in = { .s_addr = INADDR_NONE };
 	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
 #endif
-	NET_LOGV(TAG, "release IP address\n");
+	WM_LOG_INFO("[DHCPC] %s - release IP address\n", __FUNCTION__);
 	return;
 }
 
 wifi_manager_result_e dhcpc_fetch_ipaddr(struct in_addr *ip)
 {
 	if (netlib_get_ipv4addr(WIFIMGR_STA_IFNAME, ip) != OK) {
-		NET_LOGE(TAG, "[DHCPC] get IP address fail\n");
+		WM_LOG_ERROR("[DHCPC] get IP address fail\n");
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_CONNECT_DHCPC_FAIL);
 		return WIFI_MANAGER_FAIL;
 	}

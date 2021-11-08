@@ -28,14 +28,12 @@
 #include "wifi_manager_dhcp.h"
 #include "wifi_manager_event.h"
 #include "wifi_manager_msghandler.h"
-#include <tinyara/net/netlog.h>
+#include "wifi_manager_log.h"
 #include "wifi_manager_message.h"
-
-#define TAG "[WM]"
 
 static int _lwnl_convert_scan(wifi_utils_scan_list_s **scan_list, void *input, int len)
 {
-	NET_LOGV(TAG, "len(%d)\n", len);
+	WM_LOG_VERBOSE("[WU] T%d %s len(%d)\n", getpid(), __FUNCTION__, len);
 	int remain = len;
 	wifi_utils_scan_list_s *prev = NULL;
 
@@ -72,7 +70,7 @@ static wifi_utils_scan_list_s *_lwnl_handle_scan(int fd, int len)
 
 	int res = read(fd, buf, len);
 	if (res != len) {
-		NET_LOGE(TAG, "read error\n");
+		WM_LOG_ERROR("read error\n");
 		free(buf);
 		return NULL;
 	}
@@ -132,7 +130,8 @@ static int _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 		break;
 	}
 	default:
-		NET_LOGE(TAG, "Bad status received (%d)\n", status);
+		WM_LOG_ERROR("Bad status received (%d)\n", status);
+		WM_ERR;
 		return -1;
 	}
 	return 0;
@@ -154,14 +153,15 @@ int lwnl_fetch_event(int fd, void *buf, int buflen)
 	*/
 	int nbytes = read(fd, (char *)type_buf, LWNL_CB_HEADER_LEN);
 	if (nbytes < 0) {
-		NET_LOGE(TAG, "Failed to receive (nbytes=%d)\n", nbytes);
+		WM_LOG_ERROR("Failed to receive (nbytes=%d)\n", nbytes);
+		WM_ERR;
 		return -1;
 	}
 
 	memcpy(&status, type_buf, sizeof(lwnl_cb_status));
 	memcpy(&len, type_buf + sizeof(lwnl_cb_status), sizeof(uint32_t));
 
-	NET_LOGV(TAG, "scan state(%d) length(%d)\n", status.evt, len);
+	WM_LOG_VERBOSE("scan state(%d) length(%d)\n", status.evt, len);
 	(void)_lwnl_call_event(fd, status, len);
 	hmsg->msg = &g_msg;
 	hmsg->signal = NULL;
