@@ -316,7 +316,7 @@ wifi_manager_result_e _wifimgr_scan(wifi_manager_scan_config_s *config)
 	}
 
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_scan_ap((void *)&uconf), TAG,
-							 "request scan is fail");
+							 "request scan is fail", WIFI_MANAGER_FAIL);
 	return WIFI_MANAGER_SUCCESS;
 }
 
