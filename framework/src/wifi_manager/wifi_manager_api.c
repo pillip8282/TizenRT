@@ -185,17 +185,18 @@ wifi_manager_result_e wifi_manager_disconnect_ap(void)
 	RETURN_RESULT(wifimgr_post_message(&msg), msg);
 }
 
-wifi_manager_result_e wifi_manager_scan_ap(wifi_manager_scan_config_s *config)
+wifi_manager_result_e wifi_manager_scan_ap(void)
 {
 	NET_LOGI(TAG, "-->\n");
-	wifimgr_msg_s msg = {WIFIMGR_CMD_SCAN, WIFI_MANAGER_FAIL, (void *)config, NULL};
+	wifimgr_msg_s msg = {WIFIMGR_CMD_SCAN, WIFI_MANAGER_FAIL, NULL, NULL};
 	RETURN_RESULT(wifimgr_post_message(&msg), msg);
 }
 
 wifi_manager_result_e wifi_manager_scan_specific_ap(wifi_manager_ap_config_s *config)
 {
 	NET_LOGI(TAG, "-->\n");
-	return WIFI_MANAGER_NO_API;
+	wifimgr_msg_s msg = {WIFIMGR_CMD_SCAN, WIFI_MANAGER_FAIL, config, NULL};
+	RETURN_RESULT(wifimgr_post_message(&msg), msg);
 }
 
 /**

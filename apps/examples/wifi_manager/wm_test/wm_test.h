@@ -15,7 +15,9 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-#pragma once
+
+#ifndef __WIFIMANAGER_TEST_H__
+#define __WIFIMANAGER_TEST_H__
 
 struct wt_options;
 typedef void (*test_func)(void *arg);
@@ -36,3 +38,5 @@ struct wt_options {
 	uint32_t stress_tc_idx;
 	uint8_t power_mode;
 };
+
+#endif // #define __WIFIMANAGER_TEST_H__
