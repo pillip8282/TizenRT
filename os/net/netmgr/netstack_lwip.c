@@ -181,14 +181,12 @@ errout:
 static int lwip_ns_clone(FAR struct socket *psock1, FAR struct socket *psock2)
 {
 	// ToDo
-	NET_LOGV(TAG, "Not supported yet\n");
 	return 0;
 }
 
 static int lwip_ns_checksd(int sd, int oflags)
 {
 	// ToDo
-	NET_LOGV(TAG, "Not supported yet\n");
 	return 0;
 }
 
@@ -196,13 +194,10 @@ static int lwip_ns_ioctl(int sockfd, int cmd, unsigned long arg)
 {
 	int res = netdev_lwipioctl(sockfd, cmd, (void *)arg);
 	if (res < 0) {
-		if (res == -ENOTTY) {
-			NET_LOGV(TAG, "command is not for lwip ioctl\n");
-		} else {
-			NET_LOGE(TAG, "lwipioctl fail\n");
-		}
+		NET_LOGE(TAG, "lwipioctl fail\n");
+		return -ENOTTY;
 	}
-	return res;
+	return 0;
 }
 
 static int lwip_ns_vfcntl(int sockfd, int cmd, va_list ap)
