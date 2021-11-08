@@ -31,7 +31,8 @@
 #include "vdev_handler.h"
 
 extern trwifi_scan_list_s *vwifi_get_scan_list(void);
-extern struct vwifi_ops *get_vdev_ops(void);
+extern struct vwifi_ops *get_vdev_onoff(void);
+extern struct vwifi_ops *get_vdev_auto(void);
 extern struct netdev *g_vwifi_dev;
 
 static void vwifi_callback_handler(lwnl_cb_status evt)
@@ -44,48 +45,48 @@ static void vwifi_callback_handler(lwnl_cb_status evt)
 	}
 }
 
-static void _generate_evt(int argc, char *argv[])
+static void _generate_disconnect(int argc, char *argv[])
 {
+	int sleep_time = atoi(argv[1]);
 	lwnl_cb_status event_type = {LWNL_DEV_WIFI, 0};
-	event_type.evt = atoi(argv[1]);
-	int sleep_time = atoi(argv[3]);
+	event_type.evt = atoi(argv[2]);
 
 	vdvdbg("[VDEV] sleep (%d) event type(%d)\n", sleep_time, event_type.evt);
 	sleep(sleep_time);
 	vwifi_callback_handler(event_type);
 }
 
-int vwifi_create_event(uint32_t event, int32_t result, int32_t sleep)
+int vwifi_create_event(struct vwifi_evt *vevent, int sleep, uint32_t event)
 {
-	char event_buf[16] = {0,};
-	char res_buf[16] = {0,};
+	(void)vevent;
 	char sleep_buf[16] = {0,};
-
-	memset(event_buf, 0, 16);
-	memset(res_buf, 0, 16);
+	char event_buf[16] = {0,};
 	memset(sleep_buf, 0, 16);
+	memset(event_buf, 0, 16);
 
-	snprintf(event_buf, 16, "%d", event);
-	snprintf(res_buf, 16, "%d", result);
 	snprintf(sleep_buf, 16, "%d", sleep);
-
-	char *argv[4] = {0,};
-	argv[0] = event_buf;
-	argv[1] = res_buf;
-	argv[2] = sleep_buf;
+	snprintf(event_buf, 16, "%d", event);
+	char *argv[3] = {0,};
+	argv[0] = sleep_buf;
+	argv[1] = event_buf;
 	argv[2] = NULL;
 
-	int res = kernel_thread("vwifi_evt", 100, 2048, _generate_evt, argv);
-	if (res == -1) {
+	int res = kernel_thread("vwifi_evt", 100, 2048, _generate_disconnect, argv);
+	if (res < 0) {
 		VWIFI_ERROR(0);
 		return -1;
 	}
 	return 0;
 }
 
+
 int vwifi_handle_message(struct vwifi_req *req)
 {
-	struct vwifi_ops *ops = get_vdev_ops();
+	#if 1
+	struct vwifi_ops *ops = get_vdev_auto();
+	#else
+	struct vwifi_ops *ops = get_vdev_onoff();
+	#endif
 	int res = 0;
 	switch (req->type) {
 	case VWIFI_MSG_INIT:
@@ -117,9 +118,6 @@ int vwifi_handle_message(struct vwifi_req *req)
 		break;
 	case VWIFI_MSG_SETAUTOCONNECT:
 		req->res = ops->set_autoconnect(req);
-		break;
-	case VWIFI_MSG_IOCTL:
-		req->res = ops->drv_ioctl(req);
 		break;
 	default:
 		VWIFI_ERROR(0);
