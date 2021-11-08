@@ -35,102 +35,66 @@
 		}										\
 	} while (0)
 
-// this function have to succeed. other it'd be better to reset.
-int _trwifi_handle_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uint32_t buf_len)
-{
-	if (!dev) {
-		return -1;
-	}
-	if (evt == LWNL_EVT_STA_CONNECTED) {
-		return ND_NETOPS(dev, softup(dev));
-	} else if (evt == LWNL_EVT_STA_DISCONNECTED) {
-		return ND_NETOPS(dev, softdown(dev));
-	}
-	return 0;
-}
-
-// this function have to succeed. other it'd be better to reset.
-int _trwifi_handle_command(struct netdev *dev, lwnl_req cmd)
-{
-	if (!dev) {
-		return -1;
-	}
-	switch (cmd.type) {
-	case LWNL_REQ_WIFI_STARTSOFTAP: {
-		return ND_NETOPS(dev, softup(dev));
-	}
-	case LWNL_REQ_WIFI_STOPSOFTAP: {
-		return ND_NETOPS(dev, softdown(dev));
-	}
-	case LWNL_REQ_WIFI_INIT: {
-		return ND_NETOPS(dev, ifup(dev));
-	}
-	case LWNL_REQ_WIFI_DEINIT: {
-		return ND_NETOPS(dev, ifdown(dev));
-	}
-	default:
-		break;
-	}
-	return 0;
-}
-
 int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t data_len)
 {
 	trwifi_result_e res = TRWIFI_FAIL;
-
-	nvdbg("T%d cmd(%d) (%p) (%d)\n", getpid(), cmd, data, data_len);
-	switch (cmd.type) {
-	case LWNL_REQ_WIFI_INIT:
+	lldbg("T%d cmd(%d) (%p) (%d)\n", getpid(), cmd, data, data_len);
+	switch (cmd) {
+	case LWNL_INIT:
 	{
-		TRDRV_CALL(res, dev, init, (dev));
+		if (0 == nm_ifup(dev)) {
+			res = TRWIFI_SUCCESS;
+		}
 	}
 	break;
-	case LWNL_REQ_WIFI_DEINIT:
+	case LWNL_DEINIT:
 	{
-		TRDRV_CALL(res, dev, deinit, (dev));
+		if (0 == nm_ifdown(dev)) {
+			res = TRWIFI_SUCCESS;
+		}
 	}
 	break;
-	case LWNL_REQ_WIFI_GETINFO:
+	case LWNL_GET_INFO:
 	{
 		TRDRV_CALL(res, dev, get_info, (dev, (trwifi_info *)data));
 	}
 	break;
-	case LWNL_REQ_WIFI_SETAUTOCONNECT:
+	case LWNL_SET_AUTOCONNECT:
 	{
 		TRDRV_CALL(res, dev, set_autoconnect, (dev, *((uint8_t *)data)));
 	}
 	break;
-	case LWNL_REQ_WIFI_STARTSTA:
+	case LWNL_START_STA:
 	{
 		TRDRV_CALL(res, dev, start_sta, (dev));
 	}
 	break;
-	case LWNL_REQ_WIFI_CONNECTAP:
+	case LWNL_CONNECT_AP:
 	{
 		TRDRV_CALL(res, dev, connect_ap, (dev, (trwifi_ap_config_s*)data, NULL));
 	}
 	break;
-	case LWNL_REQ_WIFI_DISCONNECTAP:
+	case LWNL_DISCONNECT_AP:
 	{
 		TRDRV_CALL(res, dev, disconnect_ap, (dev, NULL));
 	}
 	break;
-	case LWNL_REQ_WIFI_STARTSOFTAP:
+	case LWNL_START_SOFTAP:
 	{
 		TRDRV_CALL(res, dev, start_softap, (dev, (trwifi_softap_config_s *)data));
 	}
 	break;
-	case LWNL_REQ_WIFI_STOPSOFTAP:
+	case LWNL_STOP_SOFTAP:
 	{
 		TRDRV_CALL(res, dev, stop_softap, (dev));
 	}
 	break;
-	case LWNL_REQ_WIFI_SCANAP:
+	case LWNL_SCAN_AP:
 	{
 		TRDRV_CALL(res, dev, scan_ap, (dev, NULL));
 	}
 	break;
-	case LWNL_REQ_WIFI_IOCTL:
+	case LWNL_IOCTL:
 	{
 		TRDRV_CALL(res, dev, drv_ioctl, (dev, (trwifi_msg_s *)data));
 	}
@@ -138,53 +102,5 @@ int netdev_handle_wifi(struct netdev *dev, lwnl_req cmd, void *data, uint32_t da
 	default:
 		break;
 	}
-	if (res == TRWIFI_SUCCESS) {
-		if (_trwifi_handle_command(dev, cmd) < 0) {
-			// if network stack is not enabled. it needs to be restart
-			ndbg("critical error network stack is not enabled\n");
-			assert(0);
-		}
-	}
 	return res;
-}
-
-int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list)
-{
-	trwifi_scan_list_s *item = scan_list;
-	int32_t cnt = 0;
-	int32_t total = 0;
-
-	while (item) {
-		item = item->next;
-		cnt++;
-	}
-	total = cnt * sizeof(trwifi_ap_scan_info_s);
-	uint32_t item_size = sizeof(trwifi_ap_scan_info_s);
-	nvdbg("total size(%d) (%d) \n", sizeof(trwifi_ap_scan_info_s), total);
-
-	*buffer = (uint8_t *)kmm_malloc(total);
-	if (!(*buffer)) {
-		ndbg("malloc fail %d\n", total);
-		return -1;
-	}
-
-	item = scan_list;
-	cnt = 0;
-	while (item) {
-		memcpy(*buffer + (item_size * cnt), &item->ap_info, item_size);
-		item = item->next;
-		cnt++;
-	}
-	return total;
-}
-
-int trwifi_post_event(struct netdev *dev, lwnl_cb_wifi evt, void *buffer, uint32_t buf_len)
-{
-	int res = _trwifi_handle_event(dev, evt, buffer, buf_len);
-	if (res < 0) {
-		// if network stack is not enabled. it needs to be restart
-		ndbg("critical error network stack is not enabled\n");
-		assert(0);
-	}
-	return lwnl_postmsg(LWNL_DEV_WIFI, (int)evt, buffer, buf_len);
 }

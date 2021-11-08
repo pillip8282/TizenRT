@@ -157,10 +157,7 @@ static void nic_display_state(void)
 			if (ret < 0) {
 				ndbg("fail %s:%d\n", __FUNCTION__, __LINE__);
 			} else {
-				printf("<");
-				printf("%s", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
-				printf("%s", IFF_IS_RUNNING(ifr->ifr_flags) ? ",RUNNING" : "");
-				printf(">\n");
+				printf("RUNNING: %s\n", (ifr->ifr_flags & IFF_UP) ? "UP" : "DOWN");
 			}
 		}
 		printf("\tinet addr: %s\t", inet_ntoa(sin->sin_addr));

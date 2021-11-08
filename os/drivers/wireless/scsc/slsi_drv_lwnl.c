@@ -243,22 +243,22 @@ static int slsi_drv_callback_handler(void *arg)
 	vddbg("Got callback from SLSI drv (%d)\n", *type);
 	switch (*type) {
 	case 1:
-		trwifi_post_event(LWNL_EVT_STA_CONNECTED, NULL, 0);
+		lwnl_postmsg(LWNL_STA_CONNECTED, NULL);
 		break;
 	case 2:
-		trwifi_post_event(LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
+		lwnl_postmsg(LWNL_STA_CONNECT_FAILED, NULL);
 		break;
 	case 3:
-		trwifi_post_event(LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+		lwnl_postmsg(LWNL_SOFTAP_STA_JOINED, NULL);
 		break;
 	case 4:
-		trwifi_post_event(LWNL_EVT_STA_DISCONNECTED, NULL, 0);
+		lwnl_postmsg(LWNL_STA_DISCONNECTED, NULL);
 		break;
 	case 5:
-		trwifi_post_event(LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
+		lwnl_postmsg(LWNL_SOFTAP_STA_LEFT, NULL);
 		break;
 	default:
-		trwifi_post_event(LWNL_EVT_UNKNOWN, NULL, 0);
+		lwnl_postmsg(LWNL_UNKNOWN, NULL);
 		break;
 	}
 
@@ -330,7 +330,7 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 
 	if (reason->reason_code != SLSI_STATUS_SUCCESS) {
 		vddbg("Scan failed %d\n");
-		trwifi_post_event(LWNL_EVT_SCAN_FAILED, NULL, 0);
+		lwnl_postmsg(LWNL_SCAN_FAILED, NULL);
 		result = SLSI_STATUS_ERROR;
 		goto return_result;
 	}
@@ -343,13 +343,13 @@ static int8_t slsi_drv_scan_callback_handler(slsi_reason_t *reason)
 
 	if (scan_filter_result.scan_flag) {
 		fetch_scan_results(&scan_filter_result.result_list, &wifi_scan_result, (const char *)scan_filter_result.scan_ssid);
-		TRWIFI_POST_SCANEVENT(LWNL_EVT_SCAN_DONE, (void *)scan_filter_result.result_list);
+		lwnl_postmsg(LWNL_SCAN_DONE, (void *)scan_filter_result.result_list);
 		sem_post(&scan_filter_result.scan_sem);
 	} else {
 		if (fetch_scan_results(&scan_list, &wifi_scan_result, NULL) == TRWIFI_SUCCESS) {
-			TRWIFI_POST_SCANEVENT(LWNL_EVT_SCAN_DONE, (void *)scan_list);
+			lwnl_postmsg(LWNL_SCAN_DONE, (void *)scan_list);
 		} else {
-			trwifi_post_event(LWNL_EVT_SCAN_FAILED, NULL, 0);
+			lwnl_postmsg(LWNL_SCAN_FAILED, NULL);
 		}
 		free_scan_results(scan_list);
 	}
