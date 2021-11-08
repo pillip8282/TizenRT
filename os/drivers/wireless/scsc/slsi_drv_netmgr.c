@@ -822,9 +822,9 @@ trwifi_result_e slsidrv_drv_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 {
 	if (msg->cmd == TRWIFI_MSG_GET_STATS) {
 		vddbg("slsi_ioctl GET_STATS\n");
-	} else if (msg->cmd == TRWIFI_MSG_GET_POWERMODE) {
+	} else if (msg->cmd == TRWIFI_MSG_GET_POWER) {
 		vddbg("slsi_ioctl GET_POWER\n");
-	} else if (msg->cmd == TRWIFI_MSG_SET_POWERMODE) {
+	} else if (msg->cmd == TRWIFI_MSG_SET_POWER) {
 		vddbg("slsi_ioctl SET_POWER\n");
 	}
 	return TRWIFI_NOT_SUPPORTED;
