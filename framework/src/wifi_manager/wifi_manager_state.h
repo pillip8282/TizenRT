@@ -16,13 +16,19 @@
  *
  ****************************************************************************/
 
-#pragma once
+#ifndef _WIFI_MANAGER_STATE_H__
+#define _WIFI_MANAGER_STATE_H__
 
 /*  State Definition */
 enum _wifimgr_state {
-#undef WIFIMGR_STATE_TABLE
-#define WIFIMGR_STATE_TABLE(state, handler, str) state,
-#include "wifi_manager_state_table.h"
+	WIFIMGR_UNINITIALIZED,
+	WIFIMGR_STA_DISCONNECTED,
+	WIFIMGR_STA_DISCONNECTING,
+	WIFIMGR_STA_CONNECTING,
+	WIFIMGR_STA_CONNECTED,
+	WIFIMGR_STA_RECONNECT, // 5
+	WIFIMGR_SOFTAP,
+	WIFIMGR_SCANNING,
 	WIFIMGR_NONE, // it is used for prev state only
 	WIFIMGR_STATE_MAX,
 };
@@ -36,3 +42,5 @@ enum _wifimgr_disconn_substate {
 	WIFIMGR_DISCONN_MAX,
 };
 typedef enum _wifimgr_disconn_substate _wifimgr_disconn_substate_e;
+
+#endif // _WIFI_MANAGER_STATE_H__

@@ -66,11 +66,6 @@
 	"\n get connection info:\n"					\
 	"	 wm_test info\n"
 
-#define WT_POWERMODE_USAGE						\
-	"\n set power mode\n"						\
-	"	 wm_test power [mode]\n"				\
-	"	 mode examples : on, off\n\n"
-
 #define WT_USAGE									\
 	"\n usage: wm_test [options]\n"					\
 	"\n run Wi-Fi Manager:\n"						\

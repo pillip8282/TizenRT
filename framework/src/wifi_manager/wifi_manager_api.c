@@ -111,8 +111,10 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
-	wifimgr_msg_s msg = {WIFIMGR_CMD_INIT, WIFI_MANAGER_FAIL, (void *)wmcb, NULL};
-	RETURN_RESULT(wifimgr_post_message(&msg), msg);
+	wifimgr_msg_s msg = {EVT_INIT_CMD, WIFI_MANAGER_FAIL, (void *)wmcb, NULL};
+	int res = wifimgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
 }
 
 wifi_manager_result_e wifi_manager_deinit(void)
@@ -120,7 +122,7 @@ wifi_manager_result_e wifi_manager_deinit(void)
 	NET_LOGI(TAG, "-->\n");
 	sem_t signal;
 	sem_init(&signal, 0, 0);
-	wifimgr_msg_s msg = {WIFIMGR_CMD_DEINIT, WIFI_MANAGER_FAIL, NULL, &signal};
+	wifimgr_msg_s msg = {EVT_DEINIT_CMD, WIFI_MANAGER_FAIL, NULL, &signal};
 
 	int res = wifimgr_post_message(&msg);
 	if (res < 0 || msg.result != WIFI_MANAGER_SUCCESS) {
@@ -153,9 +155,9 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 
 	sem_t signal;
 	sem_init(&signal, 0, 0);
-	wifimgr_msg_s msg = {WIFIMGR_CMD_SET_STA, WIFI_MANAGER_FAIL, NULL, &signal};
+	wifimgr_msg_s msg = {EVT_SET_STA_CMD, WIFI_MANAGER_FAIL, NULL, &signal};
 	if (mode == SOFTAP_MODE) {
-		msg.event = WIFIMGR_CMD_SET_SOFTAP;
+		msg.event = EVT_SET_SOFTAP_CMD;
 		msg.param = (void *)config;
 	}
 
@@ -185,10 +187,11 @@ wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *c
 
 	WIFIMGR_CHECK_AP_CONFIG(config);
 	_wifimgr_conn_info_msg_s conninfo = {config, conn_config};
-	wifimgr_msg_s msg = {WIFIMGR_CMD_CONNECT, WIFI_MANAGER_FAIL, &conninfo, NULL};
+	wifimgr_msg_s msg = {EVT_CONNECT_CMD, WIFI_MANAGER_FAIL, &conninfo, NULL};
 
+	int res = wifimgr_post_message(&msg);
 
-	RETURN_RESULT(wifimgr_post_message(&msg), msg);
+	RETURN_RESULT(res, msg);
 }
 
 wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
@@ -206,22 +209,28 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 wifi_manager_result_e wifi_manager_disconnect_ap(void)
 {
 	NET_LOGI(TAG, "-->\n");
-	wifimgr_msg_s msg = {WIFIMGR_CMD_DISCONNECT, WIFI_MANAGER_FAIL, NULL, NULL};
-	RETURN_RESULT(wifimgr_post_message(&msg), msg);
+	wifimgr_msg_s msg = {EVT_DISCONNECT_CMD, WIFI_MANAGER_FAIL, NULL, NULL};
+	int res = wifimgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
 }
 
 wifi_manager_result_e wifi_manager_scan_ap(void)
 {
 	NET_LOGI(TAG, "-->\n");
-	wifimgr_msg_s msg = {WIFIMGR_CMD_SCAN, WIFI_MANAGER_FAIL, NULL, NULL};
-	RETURN_RESULT(wifimgr_post_message(&msg), msg);
+	wifimgr_msg_s msg = {EVT_SCAN_CMD, WIFI_MANAGER_FAIL, NULL, NULL};
+	int res = wifimgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
 }
 
 wifi_manager_result_e wifi_manager_scan_specific_ap(wifi_manager_ap_config_s *config)
 {
 	NET_LOGI(TAG, "-->\n");
-	wifimgr_msg_s msg = {WIFIMGR_CMD_SCAN, WIFI_MANAGER_FAIL, config, NULL};
-	RETURN_RESULT(wifimgr_post_message(&msg), msg);
+	wifimgr_msg_s msg = {EVT_SCAN_CMD, WIFI_MANAGER_FAIL, config, NULL};
+	int res = wifimgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
 }
 
 /**
@@ -273,15 +282,10 @@ wifi_manager_result_e wifi_manager_get_stats(wifi_manager_stats_s *stats)
 
 	wifimgr_get_stats(stats);
 
-	wifimgr_msg_s msg = {WIFIMGR_CMD_GETSTATS, WIFI_MANAGER_FAIL, (void *)stats, NULL};
-	RETURN_RESULT(wifimgr_post_message(&msg), msg);
-}
+	wifimgr_msg_s msg = {EVT_GETSTATS_CMD, WIFI_MANAGER_FAIL, (void *)stats, NULL};
+	int res = wifimgr_post_message(&msg);
 
-wifi_manager_result_e wifi_manager_set_powermode(wifi_manager_powermode_e mode)
-{
-	NET_LOGI(TAG, "-->\n");
-	wifimgr_msg_s msg = {WIFIMGR_CMD_SETPOWER, WIFI_MANAGER_FAIL, (void *)&mode, 0};
-	RETURN_RESULT(wifimgr_post_message(&msg), msg);
+	RETURN_RESULT(res, msg);
 }
 
 /**
@@ -294,6 +298,7 @@ wifi_manager_result_e wifi_manager_register_cb(wifi_manager_cb_s *wmcb)
 	if (res < 0) {
 		return WIFI_MANAGER_FAIL;
 	}
+
 	return WIFI_MANAGER_SUCCESS;
 }
 

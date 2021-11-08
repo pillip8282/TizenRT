@@ -149,14 +149,10 @@ typedef struct {
 
 typedef uint16_t trwifi_cmd;
 /*  Set/Get Power save mode */
-#define TRWIFI_MSG_GET_POWERMODE 1
-#define TRWIFI_MSG_SET_POWERMODE 2
+#define TRWIFI_MSG_GET_POWER 1
+#define TRWIFI_MSG_SET_POWER 2
 /*  Get driver statistics */
 #define TRWIFI_MSG_GET_STATS 3
-
-/*  power mode(command) value */
-#define TRWIFI_POWERMODE_ON 1
-#define TRWIFI_POWERMODE_OFF 2
 
 /*  TizenRT Wi-Fi Message */
 typedef struct {
