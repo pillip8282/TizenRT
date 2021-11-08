@@ -61,7 +61,6 @@
 #include "lwip/arch.h"
 #include "netcmd.h"
 #include "netcmd_ping.h"
-#include "netcmd_log.h"
 
 #undef htons
 #define htons HTONS
@@ -79,7 +78,6 @@
 #ifndef CONFIG_NET_PING_CMD_ICOUNT
 #define CONFIG_NET_PING_CMD_ICOUNT 5
 #endif
-#define NTAG "[NETCMD]"
 
 typedef int (*set_icmp_config)(struct addrinfo *hints);
 
@@ -88,7 +86,7 @@ static uint16_t g_ping_seq_num;
 
 static void ping_usage(void)
 {
-	NETCMD_LOG(NTAG, "ping -c <count> -s <data size> <destination address> \n");
+	printf("ping -c <count> -s <data size> <destination address> \n");
 	return;
 }
 
@@ -107,7 +105,7 @@ static int ping_options(int argc, char **argv, int *count, int *size, char **sta
 		case 'c':
 			tmp = atoi(optarg);
 			if (tmp < 1 || tmp > 10000) {
-				NETCMD_LOG(NTAG, fmtargrange, argv[0]);
+				printf(fmtargrange, argv[0]);
 				badarg = true;
 			} else {
 				*count = tmp;
@@ -120,13 +118,13 @@ static int ping_options(int argc, char **argv, int *count, int *size, char **sta
 			break;
 
 		case ':':
-			NETCMD_LOG(NTAG, fmtargrequired, argv[0]);
+			printf(fmtargrequired, argv[0]);
 			badarg = true;
 			break;
 
 		case '?':
 		default:
-			NETCMD_LOG(NTAG, fmtarginvalid, argv[0]);
+			printf(fmtarginvalid, argv[0]);
 			badarg = true;
 			break;
 		}
@@ -155,7 +153,7 @@ static int ping_options(int argc, char **argv, int *count, int *size, char **sta
 	return OK;
 
 errout:
-	NETCMD_LOG(NTAG, fmt, argv[0]);
+	printf(fmt, argv[0]);
 	ping_usage();
 	return ERROR;
 }
@@ -216,7 +214,7 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 		if (family == AF_INET) {
 			fromlen = sizeof(struct sockaddr_in);
 		} else {
-			NETCMD_LOGE(NTAG, "ping_recv: invalid family\n");
+			printf("ping_recv: invalid family\n");
 			return;
 		}
 	}
@@ -224,17 +222,17 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 	/* allocate memory due to difference of size between ipv4/v6 socket structure */
 	from = malloc(fromlen);
 	if (from == NULL) {
-		NETCMD_LOGE(NTAG, "ping_recv: fail to allocate memory\n");
+		printf("ping_recv: fail to allocate memory\n");
 		return;
 	}
 
 	while (1) {
 		len = recvfrom(s, buf, sizeof(buf), 0, from, &fromlen);
 		if (len < 0) {
-			NETCMD_LOGE(NTAG, "ping_recv: recvfrom error(%d)\n", errno);
+			printf("ping_recv: recvfrom error(%d)\n", errno);
 			goto err_out;
 		} else if (len == 0) {
-			NETCMD_LOGE(NTAG, "ping_recv: timeout\n");
+			printf("ping_recv: timeout\n");
 		}
 
 #ifdef CONFIG_NET_IPv6
@@ -276,7 +274,7 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 					}
 				}
 
-				NETCMD_LOG(NTAG, "ok %d\n", ok);
+				printf("ok %d\n", ok);
 				if (ok) {
 					iecho = (struct icmp_echo_hdr *)(curp);
 
@@ -308,7 +306,7 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 			clock_gettime(CLOCK_REALTIME, &now);
 			g_ping_recv_counter++;
 			elapsed = (now.tv_sec - ping_time->tv_sec) * 1000 + (now.tv_nsec - ping_time->tv_nsec) / 1000000;
-			NETCMD_LOG(NTAG, " %d bytes from %s: icmp_seq=%d ttl=255 time=%" U32_F "ms\n", len, addr_str, g_ping_seq_num, elapsed);
+			printf(" %d bytes from %s: icmp_seq=%d ttl=255 time=%" U32_F "ms\n", len, addr_str, g_ping_seq_num, elapsed);
 
 			if ((iecho->id == PING_ID) && (iecho->seqno == htons(g_ping_seq_num))) {
 				/* do some ping result processing */
@@ -316,7 +314,7 @@ static void ping_recv(int family, int s, struct timespec *ping_time)
 				free(from);
 				return;
 			} else {
-				NETCMD_LOGE(NTAG, "drop\n");
+				printf("drop\n");
 			}
 		}
 	}
@@ -384,14 +382,14 @@ static int ping_send(int s, struct sockaddr *to, int size)
 			addrlen = sizeof(struct sockaddr_in);
 			icmplen = sizeof(struct icmp_echo_hdr) + size;
 		} else {
-			NETCMD_LOGE(NTAG, "ping_send: invalid family\n");
+			printf("ping_send: invalid family\n");
 			return ERROR;
 		}
 	}
 
 	iecho = (struct icmp_echo_hdr *)malloc(icmplen);
 	if (!iecho) {
-		NETCMD_LOGE(NTAG, "ping_send: fail to allocate memory\n");
+		printf("ping_send: fail to allocate memory\n");
 		return ERROR;
 	}
 
@@ -443,15 +441,15 @@ static int ping_process(int count, const char *taddr, int size, set_icmp_config 
 	/* write information for getaddrinfo() */
 	int res = func(&hints);
 	if (res < 0) {
-		NETCMD_LOGE(NTAG, "ping_process: invalid IP address\n");
+		printf("ping_process: invalid IP address\n");
 		return ERROR;
 	}
 
-	NETCMD_LOG(NTAG, "PING %s (%s) %d bytes of data. count(%d)\n", taddr, taddr, size, count);
+	printf("PING %s (%s) %d bytes of data. count(%d)\n", taddr, taddr, size, count);
 
 	/* get address information */
 	if (getaddrinfo(taddr, NULL, &hints, &result) != 0) {
-		NETCMD_LOGE(NTAG, "ping_process: fail to get addrinfo\n");
+		printf("ping_process: fail to get addrinfo\n");
 		return ERROR;
 	}
 
@@ -467,7 +465,7 @@ static int ping_process(int count, const char *taddr, int size, set_icmp_config 
 	}
 	if (rp == NULL) {
 		/* opening socket is totally failed */
-		NETCMD_LOGE(NTAG, "ping_process: fail to create raw socket\n");
+		printf("ping_process: fail to create raw socket\n");
 		goto err_out;
 	}
 
@@ -478,17 +476,17 @@ static int ping_process(int count, const char *taddr, int size, set_icmp_config 
 	tv.tv_usec = 0;
 
 	if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval)) != ERR_OK) {
-		NETCMD_LOGE(NTAG, "ping_process: setsockopt error\n");
+		printf("ping_process: setsockopt error\n");
 		goto err_out;
 	}
 
 	while (1) {
 		if (ping_send(s, to, size) == ERR_OK) {
-			// NETCMD_LOG(NTAG, "ping : send %d\n", ping_send_counter);
+			// printf("ping : send %d\n", ping_send_counter);
 			clock_gettime(CLOCK_REALTIME, &ping_time);
 			ping_recv((int)to->sa_family, s, &ping_time);
 		} else {
-			NETCMD_LOGE(NTAG, "ping_process: sendto error(%d)\n", errno);
+			printf("ping_process: sendto error(%d)\n", errno);
 			break;
 		}
 
@@ -502,8 +500,8 @@ static int ping_process(int count, const char *taddr, int size, set_icmp_config 
 	freeaddrinfo(result);
 	close(s);
 
-	NETCMD_LOG(NTAG, "--- %s ping statistics ---\n", taddr);
-	NETCMD_LOG(NTAG, "%d packets transmitted, %d received, %f%% packet loss\n",
+	printf("--- %s ping statistics ---\n", taddr);
+	printf("%d packets transmitted, %d received, %f%% packet loss\n",
 			ping_send_counter,
 			g_ping_recv_counter,
 			(100.0f * (float)(ping_send_counter - g_ping_recv_counter) / (float)ping_send_counter));

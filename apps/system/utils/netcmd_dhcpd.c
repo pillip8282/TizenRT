@@ -61,10 +61,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+
 #include <net/if.h>
+
 #include <protocols/dhcpd.h>
 #include <netutils/netlib.h>
-#include "netcmd_log.h"
 
 /****************************************************************************
  * Preprocessor Definitions
@@ -73,7 +74,9 @@
 #define DHCPD_SCHED_PRI			100
 #define DHCPD_SCHED_POLICY		SCHED_RR
 
-#define NTAG "[NETCMD]"
+#define OK       0
+#define ERR     -1
+
 /****************************************************************************
 * Private Data
 ****************************************************************************/
@@ -89,15 +92,15 @@
 
 static void show_usage(void)
 {
-	NETCMD_LOG(NTAG, "\n");
-	NETCMD_LOG(NTAG, "Usage: dhcpd <command> [interface name]\n");
-	NETCMD_LOG(NTAG, "\nWhere:\n");
-	NETCMD_LOG(NTAG, "	<command>		command string (start | stop | status ) \n");
-	NETCMD_LOG(NTAG, "					 - start  : start dhcpd daemon \n");
-	NETCMD_LOG(NTAG, "					 - stop   : terminate dhcpd daemon \n");
-	NETCMD_LOG(NTAG, "					 - status : show dhcpd's status \n");
-	NETCMD_LOG(NTAG, "	[interface name] name of network interface used for running dhcpd  \n");
-	NETCMD_LOG(NTAG, "\n");
+	printf("\n");
+	printf("Usage: dhcpd <command> [interface name]\n");
+	printf("\nWhere:\n");
+	printf("	<command>		command string (start | stop | status ) \n");
+	printf("					 - start  : start dhcpd daemon \n");
+	printf("					 - stop   : terminate dhcpd daemon \n");
+	printf("					 - status : show dhcpd's status \n");
+	printf("	[interface name] name of network interface used for running dhcpd  \n");
+	printf("\n");
 
 }
 
@@ -121,47 +124,47 @@ int cmd_dhcpd(int argc, char *argv[])
 
 	if (!strcmp(argv[1], "start")) {
 		if (argc < 3) {
-			NETCMD_LOGE(NTAG, "%s insert [interface name]\n", __FUNCTION__);
+			printf("ERROR : %s insert [interface name]\n", __FUNCTION__);
 			show_usage();
 			goto done;
 		}
 
 		if (dhcp_server_status(argv[2])) {
-			NETCMD_LOGE(NTAG, "%s, dhcpd is already running\n", __FUNCTION__);
-			result = ERROR;
+			printf("ERROR : %s, dhcpd is already running\n", __FUNCTION__);
+			result = ERR;
 			goto done;
 		}
 
 		if (netlib_getifstatus(argv[2], &flags) == ERROR) {
-			NETCMD_LOGE(NTAG, "%s, failed to get interface status\n", __FUNCTION__);
-			result = ERROR;
+			printf("ERROR : %s, failed to get interface status\n", __FUNCTION__);
+			result = ERR;
 			goto done;
 		} else {
 			if (flags & IFF_UP) {
-				NETCMD_LOGI(NTAG, "%s : dhcp server start on %s\n", __FUNCTION__, argv[2]);
+				printf("%s : dhcp server start on %s\n", __FUNCTION__, argv[2]);
 			} else {
-				NETCMD_LOGI(NTAG, "%s : interface %s is down, unable to run dhcpd\n", __FUNCTION__, argv[2]);
-				result = ERROR;
+				printf("%s : interface %s is down, unable to run dhcpd\n", __FUNCTION__, argv[2]);
+				result = ERR;
 				goto done;
 			}
 		}
 
 		if (dhcp_server_start(argv[2], NULL) != 0) {
-			NETCMD_LOGE(NTAG, "%s : failed to start dhcp server\n", __FUNCTION__);
+			printf("%s : failed to start dhcp server\n", __FUNCTION__);
 			goto done;
 		}
 	} else if (!strcmp(argv[1], "stop")) {
-		NETCMD_LOG(NTAG, "%s : dhcp server stop\n", __FUNCTION__);
+		printf("%s : dhcp server stop\n", __FUNCTION__);
 		dhcp_server_stop(argv[2]);
 	} else if (!strcmp(argv[1], "status")) {
-		NETCMD_LOG(NTAG, "\ndhcpd status : ");
+		printf("\ndhcpd status : ");
 		if (dhcp_server_status(argv[2])) {
-			NETCMD_LOG(NTAG, "running\n");
+			printf("running\n");
 		} else {
-			NETCMD_LOG(NTAG, "stopped\n");
+			printf("stopped\n");
 		}
 	} else {
-		NETCMD_LOGE(NTAG, "%s invalid <command> : %s\n", __FUNCTION__, argv[1]);
+		printf("ERROR : %s invalid <command> : %s\n", __FUNCTION__, argv[1]);
 		show_usage();
 		goto done;
 	}
