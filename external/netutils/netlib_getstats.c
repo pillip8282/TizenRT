@@ -26,9 +26,7 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <errno.h>
-#include <tinyara/net/netlog.h>
 
-#define TAG "[NETLIB]"
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -64,7 +62,7 @@ int netlib_getstats(void)
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
-		NET_LOGE("socket() failed with errno: %d\n", errno);
+		printf("socket() failed with errno: %d\n", errno);
 		return ret;
 	}
 
@@ -74,7 +72,7 @@ int netlib_getstats(void)
 	ret = ioctl(sockfd, SIOCLWIP, (unsigned long)&req);
 	close(sockfd);
 	if (ret == ERROR) {
-		NET_LOGE("ioctl() failed with errno: %d\n", errno);
+		printf("ioctl() failed with errno: %d\n", errno);
 		return ret;
 	}
 	// req_req_res is always OK.

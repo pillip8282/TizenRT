@@ -1,7 +1,7 @@
 /****************************************************************************
  *
  * Copyright 2016 Samsung Electronics All Rights Reserved.
-nn *
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -59,18 +59,19 @@ nn *
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+
 #include <stdio.h>
 #include <stdint.h>
 #include <debug.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+
 #include <netinet/in.h>
 #include <net/if.h>
-#include <netutils/netlib.h>
-#include <tinyara/net/netlog.h>
 
-#define TAG "[NETLIB]"
+#include <netutils/netlib.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -102,9 +103,9 @@ void print_mac_addr(const uint8_t *mac)
 	int i;
 	for (i = 0; i < IFHWADDRLEN; i++) {
 		if (i == IFHWADDRLEN - 1) {
-			NET_LOG(TAG, "%02x\t", mac[i]);
+			nlldbg("%02x\t", mac[i]);
 		} else {
-			NET_LOG(TAG, "%02x:\t", mac[i]);
+			nlldbg("%02x:\t", mac[i]);
 		}
 	}
 }
@@ -127,20 +128,21 @@ void print_mac_addr(const uint8_t *mac)
 int netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
 {
 	int ret = ERROR;
-	NET_LOGV(TAG, "Entry\n");
+	nlldbg("Entry\n");
 	if (ifname && macaddr) {
 		/* Get a socket (only so that we get access to the INET subsystem) */
 
 		int sockfd = socket(PF_INETX, NETLIB_SOCK_IOCTL, 0);
-		NET_LOGV(TAG, "sockfd = %d\n", sockfd);
+		nlldbg("sockfd = %d\n", sockfd);
 		if (sockfd >= 0) {
 			struct ifreq req;
 
 			/* Put the driver name into the request */
+
 			strncpy(req.ifr_name, ifname, IFNAMSIZ);
 
 			/* Put the new MAC address into the request */
-			NET_LOG(TAG, "Setting Mac Addr to \n");
+			nlldbg("Setting Mac Addr to \n");
 			print_mac_addr(macaddr);
 			req.ifr_hwaddr.sa_family = AF_INETX;
 			memcpy(&req.ifr_hwaddr.sa_data, macaddr, IFHWADDRLEN);
@@ -151,7 +153,7 @@ int netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
 			close(sockfd);
 		}
 	}
-	NET_LOGV(TAG, "Exit\n");
+	nlldbg("Exit\n");
 	return ret;
 }
 
