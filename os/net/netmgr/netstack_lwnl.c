@@ -23,9 +23,6 @@
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include "netstack.h"
-#include <tinyara/net/netlog.h>
-
-#define TAG "[NETMGR]"
 
 static int _create_netlink(int type, int protocol)
 {
@@ -35,7 +32,7 @@ static int _create_netlink(int type, int protocol)
 
 	int fd = open(LWNL_PATH, O_RDWR);
 	if (fd < 0) {
-		NET_LOGE(TAG, "open netlink dev fail\n");
+		ndbg("open netlink dev fail\n");
 		return -1;
 	}
 	return fd;

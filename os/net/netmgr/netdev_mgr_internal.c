@@ -29,24 +29,13 @@
 #include <tinyara/net/if/ethernet.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include "netdev_mgr_internal.h"
-#include <tinyara/net/netlog.h>
 
-#define NETDEV_LOCK								\
-	do {										\
-		sem_wait(&g_netdev_lock);				\
-	} while (0)
-
-#define NETDEV_UNLOCK							\
-	do {										\
-		sem_post(&g_netdev_lock);				\
-	} while (0)
 #ifndef CONFIG_NETDEV_NUM
 #define CONFIG_NETDEV_NUM 3
 #endif
 #define NETDEV_MGR_LOOP_NAME "lo"
 #define NETDEV_MGR_WIFI_NAME "wlan"
 #define NETDEV_MGR_ETHERNET_NAME "eth"
-#define TAG "[NETMGR]"
 
 static struct netdev g_netdev[CONFIG_NETDEV_NUM];
 static int g_netdev_idx = 0;
@@ -58,6 +47,16 @@ static int g_eth_idx = 0;
  * so if there is no write operation then protection wouldn't be required
  */
 static sem_t g_netdev_lock;
+
+#define NETDEV_LOCK								\
+	do {										\
+		sem_wait(&g_netdev_lock);				\
+	} while (0)
+
+#define NETDEV_UNLOCK							\
+	do {										\
+		sem_post(&g_netdev_lock);				\
+	} while (0)
 
 /*
  * external function
@@ -78,7 +77,6 @@ struct netdev *nm_get_netdev(uint8_t *ifname)
 int nm_foreach(tr_netdev_callback_t callback, void *arg)
 {
 	if (!callback) {
-		NET_LOGE(TAG, "invalid callback\n");
 		return -1;
 	}
 
@@ -112,8 +110,6 @@ struct netdev *nm_register(struct netdev_config *config)
 {
 	//NETDEV_LOCK;
 	if (g_netdev_idx == CONFIG_NETDEV_NUM) {
-		NET_LOGE(TAG, "No available netdev slot %d %d\n",
-					g_netdev_idx, CONFIG_NETDEV_NUM);
 		return NULL;
 	}
 
@@ -126,7 +122,7 @@ struct netdev *nm_register(struct netdev_config *config)
 		dev->type = NM_LOOPBACK;
 		int res = _nm_register_loop(dev, config);
 		if (res < 0) {
-			NET_LOGE(TAG, "initialize loopback fail\n");
+			ndbg("initialize loopback fail\n");
 			return NULL;
 		}
 		return dev;
@@ -141,14 +137,14 @@ struct netdev *nm_register(struct netdev_config *config)
 		dev->type = NM_ETHERNET;
 		dev->t_ops.eth = config->t_ops.eth;
 	} else {
-		NET_LOGE(TAG, "unknown type\n");
+		ndbg("unknown type\n");
 		return NULL;
 	}
 
 	// to do calculate exact size of tx_buf
 	dev->tx_buf = (uint8_t *)kmm_malloc(config->mtu + 12); // 12 is padding.
 	if (!dev->tx_buf) {
-		NET_LOGE(TAG, "create txbuf fail(%d)\n", config->mtu + 12);
+		ndbg("create txbuf fail(%d)\n", config->mtu + 12);
 		return NULL;
 	}
 	struct nic_config nconfig;
@@ -188,25 +184,25 @@ int nm_ifup(struct netdev *dev)
 	if (dev->type == NM_WIFI) {
 		ret = dev->t_ops.wl->init(dev);
 		if (ret < 0) {
-			NET_LOGE(TAG, "fail to up wi-fi driver interface\n");
+			ndbg("fail to up wi-fi driver interface\n");
 			return -2;
 		}
 	} else if (dev->type == NM_ETHERNET) {
 		ret = dev->t_ops.eth->init(dev);
 		if (ret < 0) {
-			NET_LOGE(TAG, "fail to intialize ethernet driver interface\n");
+			ndbg("fail to intialize ethernet driver interface\n");
 			return -1;
 		}
 		ret = dev->t_ops.eth->enable(dev);
 		if (ret < 0) {
-			NET_LOGE(TAG, "fail to up ethernet driver interface\n");
+			ndbg("fail to up ethernet driver interface\n");
 			return -1;
 		}
 	}
 
 	ret = ((struct netdev_ops *)(dev->ops))->ifup(dev);
 	if (ret < 0) {
-		NET_LOGE(TAG, "fail to link up network interface\n");
+		ndbg("fail to up network interface\n");
 		return -1;
 	}
 	return 0;
@@ -216,20 +212,20 @@ int nm_ifdown(struct netdev *dev)
 {
 	int ret = ((struct netdev_ops *)(dev->ops))->ifdown(dev);
 	if (ret < 0) {
-		NET_LOGE(TAG, "fail to link down down network interface\n");
+		ndbg("fail to down network interface\n");
 		return -1;
 	}
 
 	if (dev->type == NM_WIFI) {
 		ret = dev->t_ops.wl->deinit(dev);
 		if (ret < 0) {
-			NET_LOGE(TAG, "fail to deinit wi-fi driver interface\n");
+			ndbg("fail to down driver interface\n");
 			return -2;
 		}
 	} else if (dev->type == NM_ETHERNET) {
 		ret = dev->t_ops.eth->deinit(dev);
 		if (ret < 0) {
-			NET_LOGE(TAG, "fail to deinit etherent driver\n");
+			ndbg("fail to deinit etherent driver\n");
 			return -1;
 		}
 	}
