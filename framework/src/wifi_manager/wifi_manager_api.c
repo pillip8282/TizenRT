@@ -32,6 +32,12 @@
 #include "wifi_manager_info.h"
 #include "wifi_manager_profile.h"
 
+#ifdef CONFIG_WIFIMGR_INTERNAL_AUTOCONNECT
+#define WIFIMGR_DEFAULT_CONN_CONFIG {WIFI_RECONN_INTERVAL, 77, 128}
+#else
+#define WIFIMGR_DEFAULT_CONN_CONFIG {WIFI_RECONN_NONE, -1, -1}
+#endif
+
 /*  Check Result MACRO */
 #define WIFIMGR_CHECK_AP_CONFIG(config)									\
 	do {																\
@@ -77,6 +83,10 @@ static inline void _convert_state(wifimgr_state_e *state, connect_status_e *conn
 		break;
 	case WIFIMGR_STA_CONNECTED:
 		*conn = AP_CONNECTED;
+		*mode = STA_MODE;
+		break;
+	case WIFIMGR_STA_RECONNECT:
+		*conn = AP_RECONNECTING;
 		*mode = STA_MODE;
 		break;
 	case WIFIMGR_SOFTAP:
@@ -164,6 +174,23 @@ wifi_manager_result_e wifi_manager_set_mode(wifi_manager_mode_e mode, wifi_manag
 	return WIFI_MANAGER_SUCCESS;
 }
 
+wifi_manager_result_e wifi_manager_connect_ap_config(wifi_manager_ap_config_s *config,
+													 wifi_manager_reconnect_config_s *conn_config)
+{
+	NET_LOGI(TAG, "-->\n");
+	if (!config || !conn_config) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+
+	WIFIMGR_CHECK_AP_CONFIG(config);
+	_wifimgr_conn_info_msg_s conninfo = {config, conn_config};
+	wifimgr_msg_s msg = {WIFIMGR_CMD_CONNECT, WIFI_MANAGER_FAIL, &conninfo, NULL};
+
+
+	RETURN_RESULT(wifimgr_post_message(&msg), msg);
+}
+
 wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 {
 	NET_LOGI(TAG, "-->\n");
@@ -172,10 +199,8 @@ wifi_manager_result_e wifi_manager_connect_ap(wifi_manager_ap_config_s *config)
 		return WIFI_MANAGER_INVALID_ARGS;
 	}
 
-	WIFIMGR_CHECK_AP_CONFIG(config);
-	wifimgr_msg_s msg = {WIFIMGR_CMD_CONNECT, WIFI_MANAGER_FAIL, (void *)config, NULL};
-
-	RETURN_RESULT(wifimgr_post_message(&msg), msg);
+	wifi_manager_reconnect_config_s conn_config = WIFIMGR_DEFAULT_CONN_CONFIG;
+	return wifi_manager_connect_ap_config(config, &conn_config);
 }
 
 wifi_manager_result_e wifi_manager_disconnect_ap(void)
