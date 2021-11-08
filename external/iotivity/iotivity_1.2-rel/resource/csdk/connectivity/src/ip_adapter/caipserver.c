@@ -886,9 +886,7 @@ static void CAInitializeNetlink()
 		OIC_LOG_V(ERROR, TAG, "netlink socket failed: %s", strerror(errno));
 		return;
 	}
-
-	struct sockaddr_lwnl addr = {LWNL_DEV_WIFI};
-	int r = bind(caglobals.ip.netlinkFd, (const struct sockaddr *)&addr, sizeof(struct sockaddr_lwnl));
+	int r = bind(caglobals.ip.netlinkFd, NULL, 0);
 	if (r){
         OIC_LOG_V(ERROR, TAG, "netlink bind failed\n");
 	}
