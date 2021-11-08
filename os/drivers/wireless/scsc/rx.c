@@ -762,7 +762,11 @@ else
 
 		/* test for an overlength frame */
 		int mtu = 0;
+#ifdef CONFIG_NET_NETMGR
 		(void)netdev_get_mtu(dev, &mtu);
+#else
+		mtu = dev->mtu;
+#endif
 		if (mbuf->data_len > (mtu + ETH_HLEN)) {
 			/* A bogus length ethfrm has been encap'd. */
 			/* Is someone trying an oflow attack? */
