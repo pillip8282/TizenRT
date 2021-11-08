@@ -98,9 +98,6 @@ extern void lwnl_initialize_dev(void);
 extern int netdev_req_handle(const char *msg, size_t msg_len);
 #endif
 
-#ifdef CONFIG_BLE_MANAGER
-extern int bledev_req_handle(const char *msg, size_t msg_len);
-#endif
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -209,11 +206,9 @@ static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 	LWNL_ENTER(TAG);
 #ifdef CONFIG_NET_NETMGR
 	int ret = netdev_req_handle(buffer, len);
-#ifdef CONFIG_BLE_MANAGER	
 	if (ret == -ENOSYS) {
-		ret = bledev_req_handle(buffer, len);
+		// handle BLE request
 	}
-#endif	
 #else
 	int ret = lwnl_message_handle(buffer, len);
 #endif
@@ -379,7 +374,7 @@ int lwnl_unregister(struct lwnl_lowerhalf_s *dev)
 	return 0;
 }
 
-int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, int32_t buf_len)
+int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, uint32_t buf_len)
 {
 	if (!g_lwnl_upper) {
 		return -1;

@@ -31,10 +31,6 @@
 #define LWNL_ROUTE 1
 #define LWNL_NI_NAME_SIZE 7
 
-/*  stack interface name */
-#define LWNL_INTF_NAME "None"
-
-#define LWNL_MAX_PARAM 4
 
 /* IOCTL commands ***********************************************************/
 
@@ -79,11 +75,6 @@ typedef struct {
 	void *data;
 	void *result;
 } lwnl_msg;
-
-typedef struct {
-	uint8_t count;
-	void *param[LWNL_MAX_PARAM];
-} lwnl_msg_params;
 
 typedef struct {
 	lwnl_dev_type type;
@@ -139,7 +130,7 @@ struct netdev {
 int lwnl_register(struct lwnl_lowerhalf_s *ldev);
 int lwnl_unregister(struct lwnl_lowerhalf_s *ldev);
 int lwnl_register_dev(struct netdev *dev);
-int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, int32_t buf_len);
+int lwnl_postmsg(lwnl_dev_type dev, uint32_t evt, void *buffer, uint32_t buf_len);
 
 #ifndef CONFIG_NET_NETMGR
 int lwnl_register_dev(struct netdev *dev);
