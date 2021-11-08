@@ -19,10 +19,11 @@
 #ifndef __WIFIMANAGER_TEST_H__
 #define __WIFIMANAGER_TEST_H__
 
-struct wt_options;
+struct options;
 typedef void (*test_func)(void *arg);
+typedef int (*exec_func)(struct options *opt, int argc, char *argv[]);
 
-struct wt_options {
+struct options {
 	test_func func;
 	uint16_t channel;
 	char *ssid;
