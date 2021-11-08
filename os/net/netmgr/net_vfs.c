@@ -26,6 +26,7 @@
 #include <net/if.h>
 #include <tinyara/net/net.h>
 #include "netstack.h"
+#include "local/uds_net.h"
 #include <tinyara/net/netlog.h>
 
 #define TAG "[NETMGR]"

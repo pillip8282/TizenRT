@@ -21,6 +21,9 @@
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include "netmgr/netstack.h"
+#ifdef CONFIG_NET_LOCAL
+#include "utils/utils.h"
+#endif
 #include <tinyara/net/netlog.h>
 
 #define TAG "[NETMGR]"
@@ -102,6 +105,11 @@ void net_setup(void)
  ****************************************************************************/
 void net_initialize(void)
 {
+#ifdef CONFIG_NET_LOCAL
+	/* Initialize the local, "Unix domain" socket support */
+	local_initialize();
+#endif
+
 #ifdef CONFIG_VIRTUAL_WLAN
 	vwifi_start();
 #endif
