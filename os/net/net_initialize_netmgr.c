@@ -32,9 +32,7 @@ struct tr_netmgr {
 static struct tr_netmgr g_netmgr;
 
 extern int netdev_mgr_start(void);
-#ifdef CONFIG_VIRTUAL_WLAN
-extern void vwifi_start(void);
-#endif
+
 /****************************************************************************
  * Name: netmgr_setup
  *
@@ -107,10 +105,6 @@ void net_initialize(void)
 	/* Initialize the local, "Unix domain" socket support */
 
 	local_initialize();
-#endif
-
-#ifdef CONFIG_VIRTUAL_WLAN
-	vwifi_start();
 #endif
 
 	/*  start network stack */
