@@ -28,7 +28,6 @@
 extern void sl_ss_test(void);
 extern void sl_auth_test(void);
 extern void sl_keymgr_test(void);
-extern void sl_simple_test(void);
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -39,6 +38,6 @@ int sl_test_main(int argc, char *argv[])
 	sl_keymgr_test();
 	sl_auth_test();
 	sl_ss_test();
-	sl_simple_test();
+
 	return 0;
 }
