@@ -17,5 +17,4 @@
  ****************************************************************************/
 #pragma once
 
-#define WT_LOG(tag, fmt, args...) \
-	printf(tag"[T%d] "fmt"\n", getpid(), ##args)
+#define WT_LOG(tag, fmt, args...) printf(tag" "fmt, ##args)
