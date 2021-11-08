@@ -140,25 +140,41 @@ static wifi_manager_result_e _wifimgr_scan(wifi_manager_ap_config_s *config);
 /*
  * functions managing a state machine
  */
-#define WIFIMGR_STATE_TABLE(handler, str) \
-	static wifi_manager_result_e handler(wifimgr_msg_s *msg);
-#include "wifi_manager_state_table.h"
 static wifi_manager_result_e _handle_request(wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_reconnect_state(wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg);
+static wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg);
+
 typedef wifi_manager_result_e (*wifimgr_handler)(wifimgr_msg_s *msg);
 
 /*
  * g_handler should be matched to _wifimgr_state
  */
 static const wifimgr_handler g_handler[] = {
-#undef WIFIMGR_STATE_TABLE
-#define WIFIMGR_STATE_TABLE(handler, str) handler,
-#include "wifi_manager_state_table.h"
+	_handler_on_uninitialized_state,
+	_handler_on_disconnected_state,
+	_handler_on_disconnecting_state,
+	_handler_on_connecting_state,
+	_handler_on_connected_state,
+	_handler_on_reconnect_state,
+	_handler_on_softap_state,
+	_handler_on_scanning_state,
 };
 
 static char *wifimgr_state_str[] = {
-#undef WIFIMGR_STATE_TABLE
-#define WIFIMGR_STATE_TABLE(handler, str) str,
-#include "wifi_manager_state_table.h"
+	"WIFIMGR_UNINITIALIZED",
+	"WIFIMGR_STA_DISCONNECTED",
+	"WIFIMGR_STA_DISCONNECTING",
+	"WIFIMGR_STA_CONNECTING",
+	"WIFIMGR_STA_CONNECTED",
+	"WIFIMGR_STA_RECONNECT",
+	"WIFIMGR_SOFTAP",
+	"WIFIMGR_SCANNING",
 	"WIFIMGR_NONE",
 	"WIFIMGR_STATE_MAX",
 };
