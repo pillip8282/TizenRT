@@ -34,13 +34,13 @@
 /*  To-do: change dbg to user space API */
 /*  network log for user space */
 #define NET_LOG(tag, fmt, args...) \
-	nwdbg(fmt, ##args)
+	printf(fmt, ##args)
 #define NET_LOGE(tag, fmt, args...) \
-	ndbg("%d " tag "[ERR]\t" fmt, __LINE__, ##args)
+	printf(tag "[ERR]\t" fmt, ##args)
 #define NET_LOGI(tag, fmt, args...) \
-	nwdbg("%d " tag "[INFO]\t" fmt, __LINE__, ##args)
-#define NET_LOGV(tag, fmt, args...) \
-	nvdbg("%d " tag "[VERB]\t" fmt, __LINE__, ##args)
+	printf(tag "[INFO]\t" fmt, ##args)
+// To-do: NET_LOGV will be defined by kconfig
+#define NET_LOGV(tag, fmt, args...)
 
 typedef struct {
 	int idx;
