@@ -99,12 +99,21 @@
  *     ready to run taks, executed.
  *
  ****************************************************************************/
+extern uint32_t *jc_sp;
 void up_unblock_task_without_savereg(struct tcb_s *tcb)
 {
 	struct tcb_s *rtcb;
 
 	/* Remove the task from the blocked task list */
 	dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->task_state].list);
+	if (tcb->pid == 13) {
+		uint32_t *sp = up_getsp();//regs[REG_R1];//up_getsp();
+		jc_sp = sp;
+		if(sp > tcb->adj_stack_ptr|| sp < tcb->adj_stack_ptr - tcb->adj_stack_size) {
+				lldbg("@@@[JCKIM]@@@ SP invalid\n");
+				PANIC();
+		}
+	}
 
 	/* Reset its timeslice.  This is only meaningful for round
 	* robin tasks but it doesn't here to do it for everything

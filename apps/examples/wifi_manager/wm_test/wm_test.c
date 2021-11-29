@@ -30,6 +30,7 @@
 #include "wm_test.h"
 #include "wm_test_usage.h"
 #include "wm_test_log.h"
+#include <sys/prctl.h>
 
 #define WM_TEST_COUNT 10
 #define TAG "[WT]"
@@ -878,6 +879,8 @@ int main(int argc, FAR char *argv[])
 int wm_test_main(int argc, char *argv[])
 #endif
 {
+	prctl(PR_JCTEST, NULL);
+
 	WT_LOG(TAG, "wifi manager test!!");
 	int res = _wt_signal_init();
 	if (res < 0) {

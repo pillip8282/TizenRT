@@ -105,6 +105,7 @@ enum prctl_type_e {
 	PR_REBOOT_REASON_READ,
 	PR_REBOOT_REASON_WRITE,
 	PR_REBOOT_REASON_CLEAR,
+	PR_JCTEST,
 };
 
 /****************************************************************************

@@ -68,7 +68,7 @@
  *   1) The priority of the currently running task is either equal or more than other ready to run task
  *
  ****************************************************************************/
-
+extern uint32_t *jc_sp;
 void up_schedyield(void)
 {
 	struct tcb_s *rtcb = this_task();
@@ -78,6 +78,15 @@ void up_schedyield(void)
 		sdbg("Fail to yield, there is no next tcb. Current task : %d\n", rtcb->pid);
 		return;
 	}
+
+			if (rtcb->pid == 13) {
+			uint32_t *sp = up_getsp();//regs[REG_R1];//up_getsp();
+			jc_sp = sp;
+			if(sp > rtcb->adj_stack_ptr|| sp < rtcb->adj_stack_ptr - rtcb->adj_stack_size) {
+					lldbg("@@@[JCKIM]@@@ SP invalid\n");
+					PANIC();
+			}
+		}
 
 	/* Yielding the CPU resource to other tasks is possible only if other tasks
 	 * priority is either equal or greater than currently running task.

@@ -108,11 +108,20 @@
  *     hold the blocked task TCB.
  *
  ****************************************************************************/
-
+uint32_t *jc_sp;
 void up_block_task(struct tcb_s *tcb, tstate_t task_state)
 {
 	struct tcb_s *rtcb = this_task();
 	bool switch_needed;
+
+		if (tcb->pid == 13) {
+			uint32_t *sp = up_getsp();//regs[REG_R1];//up_getsp();
+			jc_sp = sp;
+			if(sp > tcb->adj_stack_ptr || sp < tcb->adj_stack_ptr - tcb->adj_stack_size) {
+					lldbg("@@@[JCKIM]@@@ SP invalid\n");
+					PANIC();
+			}
+		}
 
 	/* Verify that the context switch can be performed */
 

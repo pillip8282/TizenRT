@@ -97,12 +97,21 @@
  *   the ready to run list.
  *
  ****************************************************************************/
-
+extern uint32_t *jc_sp;
 void up_release_pending(void)
 {
 	struct tcb_s *rtcb = this_task();
 
 	sllvdbg("From TCB=%p\n", rtcb);
+
+		if (rtcb->pid == 13) {
+			uint32_t *sp = up_getsp();//regs[REG_R1];//up_getsp();
+			jc_sp = sp;
+			if(sp > rtcb->adj_stack_ptr|| sp < rtcb->adj_stack_ptr - rtcb->adj_stack_size) {
+					lldbg("@@@[JCKIM]@@@ SP invalid\n");
+					PANIC();
+			}
+		}
 
 	/* Merge the g_pendingtasks list into the g_readytorun task list */
 

@@ -96,13 +96,13 @@
  *   write() logic adds data to the head of the xmit buffer.
  *
  ************************************************************************************/
-
+int jc_xmit;
 void uart_xmitchars(FAR uart_dev_t *dev)
 {
 	uint16_t nbytes = 0;
 
 	/* Send while we still have data in the TX buffer & room in the fifo */
-
+jc_xmit = 1;
 	while (dev->xmit.head != dev->xmit.tail && uart_txready(dev)) {
 		/* Send the next byte */
 
@@ -115,6 +115,7 @@ void uart_xmitchars(FAR uart_dev_t *dev)
 			dev->xmit.tail = 0;
 		}
 	}
+	jc_xmit = 2;
 
 	/* When all of the characters have been sent from the buffer disable the TX
 	 * interrupt.
@@ -126,16 +127,20 @@ void uart_xmitchars(FAR uart_dev_t *dev)
 	 */
 
 	if (dev->xmit.head == dev->xmit.tail) {
+		jc_xmit = 3;
 		uart_disabletxint(dev);
 	}
+	jc_xmit = 4;
 
 	/* If any bytes were removed from the buffer, inform any waiters there there is
 	 * space available.
 	 */
 
 	if (nbytes) {
+		jc_xmit = 5;
 		dev->sent(dev);
 	}
+	jc_xmit = 6;
 }
 
 /************************************************************************************

@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <sys/prctl.h>
 
 /****************************************************************************
  * hello_main
@@ -68,5 +69,7 @@ int hello_main(int argc, char *argv[])
 #endif
 {
 	printf("Hello, World!!\n");
+	prctl(PR_JCTEST, NULL);
+	
 	return 0;
 }

@@ -100,7 +100,7 @@
  *   location with interrupts disabled.
  *
  ****************************************************************************/
-
+extern uint32_t *jc_sp;
 void up_sigdeliver(void)
 {
 	struct tcb_s *rtcb = this_task();
@@ -111,6 +111,14 @@ void up_sigdeliver(void)
 	 * so that the user code final gets the correct errno value (probably
 	 * EINTR).
 	 */
+		if (rtcb->pid == 13) {
+			uint32_t *sp = up_getsp();//regs[REG_R1];//up_getsp();
+			jc_sp = sp;
+			if(sp > rtcb->adj_stack_size|| sp < rtcb->adj_stack_ptr - rtcb->adj_stack_size) {
+					lldbg("@@@[JCKIM]@@@ SP invalid\n");
+					PANIC();
+			}
+		}
 
 	int saved_errno = rtcb->pterrno;
 

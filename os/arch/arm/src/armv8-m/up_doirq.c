@@ -83,13 +83,51 @@ extern uint32_t g_nestlevel; /* Initial top of interrupt stack */
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+ struct irq {
+	xcpt_t handler;
+	FAR void *arg;
+#ifdef CONFIG_DEBUG_IRQ_INFO
+	char irq_name[MAX_IRQNAME_SIZE + 1]; /* Includes the terminating Null */
+	size_t count;
+#endif
+};
+extern struct irq g_irqvector[80];
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+int jc_interrupt;
+int myirq;
+uint32_t mysp;
+int myirq2;
+uint32_t mysp2;
+int sp_irq;
+xcpt_t jc_dispatch;
+extern int jc_start_test;
+uint32_t before;
+uint32_t after;
 
 uint32_t *up_doirq(int irq, uint32_t *regs)
 {
+	before++;
+
+	if(getpid() == 13 && irq > 15) {
+		myirq = irq;
+		mysp = up_getsp();
+		jc_dispatch = g_irqvector[irq].handler;
+#if 1
+		if(jc_start_test == 1) {
+
+			struct tcb_s *mytcb = sched_gettcb(13);
+			if(mysp > mytcb->adj_stack_ptr || mysp < mytcb->adj_stack_ptr - mytcb->adj_stack_size) {
+				sp_irq = irq;
+				lldbg("sp : %x, handler : %x\n", mysp, g_irqvector[irq].handler);
+				PANIC();
+			}
+		}
+#endif
+	}
+
 #ifdef CONFIG_ARCH_NESTED_INTERRUPT
 	irqstate_t flags;
 #endif
@@ -136,8 +174,18 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 #endif
 
 	/* Deliver the IRQ */
+	if (irq > 15) {
+		jc_interrupt= irq;
+	}
 
 	irq_dispatch(irq, regs);
+	if(jc_start_test == 1) {
+		if(getpid() == 13 && irq > 15) {
+			myirq2 = irq;
+			mysp2 = up_getsp();
+		}
+	}
+		after++;
 
 #ifdef CONFIG_ARCH_NESTED_INTERRUPT
 	/* Context switches are indicated by the returned value of this function.

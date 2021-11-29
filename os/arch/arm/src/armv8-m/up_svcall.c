@@ -181,7 +181,7 @@ static void dispatch_syscall(void)
  *   This is SVCall exception handler that performs context switching
  *
  ****************************************************************************/
-
+extern uint32_t *jc_sp;
 int up_svcall(int irq, FAR void *context, FAR void *arg)
 {
 	uint32_t *regs = (uint32_t *)context;
@@ -264,7 +264,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		current_regs = (uint32_t *)regs[REG_R1];
 
 		/* Restore rtcb data for context switching */
-
+		if (rtcb->pid == 13) {
+			lldbg("@!@! saved : %x, cur : %x\n", jc_sp, current_regs[REG_R13]);
+		}
 		up_restoretask(rtcb);
 	}
 	break;
@@ -292,6 +294,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		up_savefpu((uint32_t *)regs[REG_R1]);
 #endif
 		current_regs = (uint32_t *)regs[REG_R2];
+		if (rtcb->pid == 13) {
+			lldbg("@!@!@ saved : %x, cur : %x\n", jc_sp, current_regs[REG_R13]);
+		}
 
 		/* Restore rtcb data for context switching */
 

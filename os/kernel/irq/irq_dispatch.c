@@ -99,6 +99,8 @@
  *   logic.
  *
  ***************************************************************************/
+xcpt_t jc_handler;
+int jc_irq;
 void irq_dispatch(int irq, FAR void *context)
 {
 	xcpt_t vector;
@@ -111,8 +113,13 @@ void irq_dispatch(int irq, FAR void *context)
 		vector = irq_unexpected_isr;
 		arg    = NULL;
 	} else {
+
 		vector = g_irqvector[irq].handler;
 		arg    = g_irqvector[irq].arg;
+				if (irq > 7) {
+			jc_irq = irq;
+			jc_handler = vector;
+			}
 #ifdef CONFIG_DEBUG_IRQ_INFO
 		g_irqvector[irq].count++;
 #endif

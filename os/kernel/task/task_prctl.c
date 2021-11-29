@@ -114,7 +114,7 @@
  *       by optional arg1.
  *
  ****************************************************************************/
-
+int jc_start_test;
 int prctl(int option, ...)
 {
 	va_list ap;
@@ -375,6 +375,14 @@ int prctl(int option, ...)
 		return OK;
 	}
 #endif
+	case PR_JCTEST:
+	{
+		va_end(ap);
+		lldbg("I am here!!!\n");
+		jc_start_test = 1;
+		return OK;
+	}
+
 	default:
 		sdbg("Unrecognized option: %d\n", option);
 		err = EINVAL;

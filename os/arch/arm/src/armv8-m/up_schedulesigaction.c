@@ -119,7 +119,7 @@
  *       handler now.
  *
  ****************************************************************************/
-
+extern uint32_t *jc_sp;
 void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 {
 	irqstate_t flags;
@@ -130,6 +130,15 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 
 	svdbg("tcb=0x%p sigdeliver=0x%p\n", tcb, sigdeliver);
 	DEBUGASSERT(tcb != NULL && sigdeliver != NULL);
+
+			if (tcb->pid == 13) {
+			uint32_t *sp = up_getsp();//regs[REG_R1];//up_getsp();
+			jc_sp = sp;
+			if(sp > tcb->adj_stack_ptr|| sp < tcb->adj_stack_ptr - tcb->adj_stack_size) {
+					lldbg("@@@[JCKIM]@@@ SP invalid\n");
+					PANIC();
+			}
+		}
 
 	/* Refuse to handle nested signal actions */
 

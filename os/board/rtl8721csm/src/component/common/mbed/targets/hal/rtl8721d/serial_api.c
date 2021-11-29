@@ -230,16 +230,21 @@ uart_dmarecv_irqhandler(
 
 	return 0;
 }
+int jcval2 = 0;
+uart_irq_handler jccallback;
 
 static void uart_txdone_callback(VOID *pAdapter)
 {
 	PMBED_UART_ADAPTER puart_adapter = pAdapter;
 	u8 uart_idx = puart_adapter->UartIndex;
-
+jcval2 = 1;
 	// Mask UART TX FIFI empty
 	UART_INTConfig(puart_adapter->UARTx, RUART_IER_ETBEI, DISABLE);
+	jcval2 = 2;
 
 	if (irq_handler[uart_idx] != NULL) {
+		jcval2 = 3;
+		jccallback = irq_handler[uart_idx];
 		irq_handler[uart_idx](serial_irq_ids[uart_idx], TxIrq);
 	}
 }
@@ -290,7 +295,7 @@ uart_intsend_complete(
 		puart_adapter->TxCompCallback(puart_adapter->TxCompCbPara);
 	}
 }
-
+int jcval = 0;
 static u32
 uart_irqhandler(
         IN VOID *Data
@@ -311,31 +316,36 @@ uart_irqhandler(
 
 	switch (IntId) {
 	case RUART_LP_RX_MONITOR_DONE:
+		jcval = 1;
 		RegValue = UART_RxMonitorSatusGet(puart_adapter->UARTx);
 	break;
 	
 	case RUART_MODEM_STATUS:
+				jcval = 2;
 		RegValue =  UART_ModemStatusGet(puart_adapter->UARTx);
 	break;
 		
 	case RUART_RECEIVE_LINE_STATUS:
+				jcval = 3;
 		RegValue = UART_LineStatusGet(puart_adapter->UARTx);
 	break;
 
 	case RUART_TX_FIFO_EMPTY:
 		if (UART_GetTxFlag(puart_adapter->UartIndex)) {
-			int cnt=16;
-			while(cnt>0&&puart_adapter->TxCount>0){
+					jcval = 4;
+//			int cnt=16;
+			while(puart_adapter->TxCount>0){
 				UART_CharPut(puart_adapter->UARTx, *puart_adapter->pTxBuf);
 				puart_adapter->TxCount --;
 				puart_adapter->pTxBuf ++;
-				cnt--;
+//				cnt--;
 			}
 			
 			if (0 == puart_adapter->TxCount) {
 				uart_intsend_complete(puart_adapter);
 			}
 		} else {
+				jcval = 5;
 			// Call Tx done callback
 			uart_txdone_callback(puart_adapter);
 		}
@@ -343,7 +353,9 @@ uart_irqhandler(
 
 	case RUART_RECEIVER_DATA_AVAILABLE:
 	case RUART_TIME_OUT_INDICATION:
+		
 		if (UART_GetRxFlag(puart_adapter->UartIndex) == STATERX_INT) {
+					jcval = 6;
 			u32 TransCnt = 0;
 			
 			TransCnt = UART_ReceiveDataTO(puart_adapter->UARTx, puart_adapter->pRxBuf,
@@ -355,6 +367,7 @@ uart_irqhandler(
 				uart_intrecv_complete(puart_adapter);
 			}
 		} else {
+				jcval = 7;
 			// Call Rx data ready callback
 			RegValue = (UART_LineStatusGet(puart_adapter->UARTx));
 			if (RegValue & RUART_LINE_STATUS_REG_DR) {

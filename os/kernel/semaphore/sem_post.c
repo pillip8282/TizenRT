@@ -93,13 +93,15 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+ int jc_sem;
+sem_t *jc_waitsem;
 void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
 {
 	struct tcb_s *stcb = NULL;
 #ifdef SAVE_SEM_HOLDER
 	struct semholder_s *pholder = NULL;
 #endif
-
+jc_sem = 1;
 #ifdef CONFIG_SEMAPHORE_HISTORY
 	save_semaphore_history(sem, (void *)this_task(), SEM_RELEASE);
 #endif
@@ -138,8 +140,10 @@ void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
 			save_semaphore_history(sem, (void *)stcb, SEM_ACQUIRE);
 #endif
 			/* Restart the waiting task. */
+			jc_waitsem=sem;
 
 			up_unblock_task(stcb);
+jc_sem = 2;
 		}
 	}
 
