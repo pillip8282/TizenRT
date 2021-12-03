@@ -36,6 +36,7 @@ typedef enum {
 	HAL_EMPTY_SLOT,
 	HAL_BAD_KEY,	         // only public key can be returned
 	HAL_BAD_KEY_PAIR,      // public and private keys do not match
+	HAL_PRIVKEY_HAS_PUBKEY, // A public key is passed even though a private key contains a public key
 	HAL_BAD_CERT,
 	HAL_BAD_CERTKEY_PAIR,  // certificate and key do not match
 	HAL_NOT_ENOUGH_MEMORY,
