@@ -109,17 +109,17 @@ extern int jc_start_test;
 void up_unblock_task(struct tcb_s *tcb)
 {
 	struct tcb_s *rtcb = this_task();
-		if (rtcb->pid == 13) {
-			if(jc_sem == 1) jc_sem_unblock=99;
-			uint32_t sp = up_getsp();//regs[REG_R1];//up_getsp();
-			jc_sp = sp;
-			if(jc_start_test == 1) {
-				if(sp > rtcb->adj_stack_ptr || sp < rtcb->adj_stack_ptr - rtcb->adj_stack_size) {
-						lldbg("@@@[JCKIM]@@@ SP invalid\n");
-						PANIC();
-				}
-			}
-		}
+		/* if (rtcb->pid == 13) { */
+		/* 	if(jc_sem == 1) jc_sem_unblock=99; */
+		/* 	uint32_t sp = up_getsp();//regs[REG_R1];//up_getsp(); */
+		/* 	jc_sp = sp; */
+		/* 	if(jc_start_test == 1) { */
+		/* 		if(sp > rtcb->adj_stack_ptr || sp < rtcb->adj_stack_ptr - rtcb->adj_stack_size) { */
+		/* 				lldbg("@@@[JCKIM]@@@ SP invalid\n"); */
+		/* 				PANIC(); */
+		/* 		} */
+		/* 	} */
+		/* } */
 
 	/* Verify that the context switch can be performed */
 
