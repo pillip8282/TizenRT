@@ -346,9 +346,14 @@ static err_t lwip_linkoutput(struct netif *nic, struct pbuf *buf)
 
 	return ERR_OK;
 }
-
+extern uint32_t g_driver_total;
+extern uint32_t g_pbuf_driver_fail;
+extern uint32_t g_link_total;
+extern uint32_t g_link_success ;
+extern uint32_t g_link_fail ;
 static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 {
+	g_driver_total += len;
 	LWIP_DEBUGF(NETIF_DEBUG, ("passing to LWIP layer, packet len %d \n", len));
 	struct pbuf *p, *q;
 	/* Receive the complete packet */
@@ -356,6 +361,9 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 	if (0 == len) {
 		NET_LOGKV(TAG, "input size is 0\n");
 		return 0;
+	}
+	if (len > 1520) {
+		printf("[pkbuild] overflow\n");
 	}
 	struct netif *netif = GET_NETIF_FROM_NETDEV(dev);
 	/* We allocate a pbuf chain of pbufs from the pool. */
@@ -366,6 +374,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 		LWIP_DEBUGF(NETIF_DEBUG, ("mem error\n"));
 		LINK_STATS_INC(link.memerr);
 		LINK_STATS_INC(link.drop);
+		g_pbuf_driver_fail++;
 		return -1;
 	}
 	LWIP_DEBUGF(NETIF_DEBUG, ("processing pbufs\n"));
@@ -390,12 +399,17 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 	{
 		/* full packet send to tcpip_thread to process */
 		if (netif->input(p, netif) != ERR_OK) {
+			g_link_fail++;
 			NET_LOGKE(TAG, "input processing\n");
 			LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
 			LINK_STATS_INC(link.err);
 			pbuf_free(p);
 		} else {
 			LINK_STATS_INC(link.recv);
+			//printf("[pkbuild] link %d %d %s:%d\n", g_link_cnt++, p->tot_len, __FUNCTION__, __LINE__);
+			//printf("[pkbuild] %u %u %s:%d\n", g_link_success, g_link_total, __FUNCTION__, __LINE__);
+			g_link_success++;
+			g_link_total += p->tot_len;
 		}
 	} break;
 	default:

@@ -139,7 +139,7 @@ void tcp_input(struct pbuf *p, struct netif *inp)
 	tcphdr = (struct tcp_hdr *)p->payload;
 
 #if TCP_INPUT_DEBUG
-	tcp_debug_print(tcphdr);
+	// pkbuild tcp_debug_print(tcphdr);
 #endif
 
 	/* Check that TCP header fits in payload */
@@ -162,7 +162,7 @@ void tcp_input(struct pbuf *p, struct netif *inp)
 										ip_current_src_addr(), ip_current_dest_addr());
 		if (chksum != 0) {
 			LWIP_DEBUGF(TCP_INPUT_DEBUG, ("tcp_input: packet discarded due to failing checksum 0x%04" X16_F "\n", chksum));
-			tcp_debug_print(tcphdr);
+			// pkbuild tcp_debug_print(tcphdr);
 			TCP_STATS_INC(tcp.chkerr);
 			goto dropped;
 		}
@@ -333,9 +333,9 @@ void tcp_input(struct pbuf *p, struct netif *inp)
 		}
 	}
 #if TCP_INPUT_DEBUG
-	LWIP_DEBUGF(TCP_INPUT_DEBUG, ("+-+-+-+-+-+-+-+-+-+-+-+-+-+- tcp_input: flags "));
-	tcp_debug_print_flags(TCPH_FLAGS(tcphdr));
-	LWIP_DEBUGF(TCP_INPUT_DEBUG, ("-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n"));
+	//LWIP_DEBUGF(TCP_INPUT_DEBUG, ("+-+-+-+-+-+-+-+-+-+-+-+-+-+- tcp_input: flags "));
+	//tcp_debug_print_flags(TCPH_FLAGS(tcphdr));
+	//LWIP_DEBUGF(TCP_INPUT_DEBUG, ("-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n"));
 #endif							/* TCP_INPUT_DEBUG */
 
 	if (pcb != NULL) {
@@ -1117,7 +1117,10 @@ static void tcp_receive(struct tcp_pcb *pcb)
 					LWIP_DEBUGF(TCP_CWND_DEBUG, ("tcp_receive: congestion avoidance cwnd %" TCPWNDSIZE_F "\n", pcb->cwnd));
 				}
 			}
-			LWIP_DEBUGF(TCP_INPUT_DEBUG, ("tcp_receive: ACK for %" U32_F ", unacked->seqno %" U32_F ":%" U32_F "\n", ackno, pcb->unacked != NULL ? lwip_ntohl(pcb->unacked->tcphdr->seqno) : 0, pcb->unacked != NULL ? lwip_ntohl(pcb->unacked->tcphdr->seqno) + TCP_TCPLEN(pcb->unacked) : 0));
+			LWIP_DEBUGF(TCP_INPUT_DEBUG, ("tcp_receive: ACK for %" U32_F ", unacked->seqno %" U32_F ":%" U32_F "\n",
+										  ackno,
+										  pcb->unacked != NULL ? lwip_ntohl(pcb->unacked->tcphdr->seqno) : 0,
+										  pcb->unacked != NULL ? lwip_ntohl(pcb->unacked->tcphdr->seqno) + TCP_TCPLEN(pcb->unacked) : 0));
 
 			/* Remove segment from the unacknowledged list if the incoming
 			   ACK acknowledges them. */

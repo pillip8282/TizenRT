@@ -93,6 +93,9 @@ int listen(int sockfd, int backlog)
 {
 	NETSTACK_CALL_BYFD(sockfd, listen, (sockfd, backlog));
 }
+extern uint32_t g_app_recv_cnt;
+extern uint32_t g_app_recv_total;
+extern uint32_t g_app_recv_max;
 
 ssize_t recv(int sockfd, void *mem, size_t len, int flags)
 {
@@ -105,6 +108,15 @@ ssize_t recv(int sockfd, void *mem, size_t len, int flags)
 		NETMGR_STATS_INC(g_app_recv_cnt);
 	}
 	leave_cancellation_point();
+	g_app_recv_cnt++;
+	if (res > 0) {
+		g_app_recv_total += res;
+		if (res > g_app_recv_max) g_app_recv_max = res;
+	}
+	/* printf("[pkbuild] T%d recv %d %d %s:%d\n", getpid(), sockfd, res, __FUNCTION__, __LINE__); */
+	/* if (res == -1) { */
+	/* 	printf("[pkbuild] T%d %d %s %s:%d\n", getpid(), sockfd, strerror(errno), __FUNCTION__, __LINE__); */
+	/* } */
 	return res;
 }
 

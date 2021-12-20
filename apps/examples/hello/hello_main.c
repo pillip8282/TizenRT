@@ -60,6 +60,29 @@
 /****************************************************************************
  * hello_main
  ****************************************************************************/
+uint32_t g_app_recv_cnt = 0;
+uint32_t g_app_recv_total = 0;
+uint32_t g_app_recv_max = 0;
+
+uint32_t g_tcpmbox_success = 0;
+uint32_t g_tcpmbox_fail = 0;
+uint32_t g_tcpmbox_max = 0;
+uint32_t g_tcpmbox_total = 0;
+
+uint32_t g_udpmbox_success = 0;
+uint32_t g_udpmbox_fail = 0;
+uint32_t g_udpmbox_max = 0;
+uint32_t g_udpmbox_total = 0;
+
+uint32_t g_link_success = 0;
+uint32_t g_link_fail = 0;
+uint32_t g_link_total = 0;
+uint32_t g_driver_total = 0;
+
+uint32_t g_pbuf_success = 0;
+uint32_t g_pbuf_fail = 0;
+uint32_t g_pbuf_total_cnt = 0;
+uint32_t g_pbuf_driver_fail = 0;
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -68,5 +91,53 @@ int hello_main(int argc, char *argv[])
 #endif
 {
 	printf("Hello, World!!\n");
+	printf("[APP] %u %u max %u avg %u\n",
+		   g_app_recv_cnt, g_app_recv_total, g_app_recv_max,
+		   ((g_app_recv_cnt == 0) ? 0 : g_app_recv_total / g_app_recv_cnt));
+	printf("[tcp] (%u/%u/%u) max %u avg %u\n",
+		   g_tcpmbox_success,
+		   g_tcpmbox_fail,
+		   g_tcpmbox_total, g_tcpmbox_max,
+		   ((g_tcpmbox_success == 0) ? 0 : g_tcpmbox_total / g_tcpmbox_success));
+	printf("[udp] (%u/%u/%u) max %u avg %u\n",
+		   g_udpmbox_success,
+		   g_udpmbox_fail,
+		   g_udpmbox_total, g_udpmbox_max,
+		   ((g_udpmbox_success == 0) ? 0 : g_udpmbox_total / g_udpmbox_success));
+
+	printf("[link] (%u/%u/%u) driver total %u\n",
+		   g_link_success, g_link_fail,
+		   g_link_total, g_driver_total,
+		   ((g_link_success == 0) ? 0 : g_link_total / g_link_success));
+
+	printf("[pbuf] (%u/%u/%u) driver %u\n",
+		   g_pbuf_success, g_pbuf_fail, g_pbuf_total_cnt,
+		   g_pbuf_driver_fail);
+
+	if (argc == 2) {
+		g_app_recv_cnt = 0;
+		g_app_recv_total = 0;
+		g_app_recv_max = 0;
+
+		g_tcpmbox_success = 0;
+		g_tcpmbox_fail = 0;
+		g_tcpmbox_max = 0;
+		g_tcpmbox_total = 0;
+
+		g_udpmbox_success = 0;
+		g_udpmbox_fail = 0;
+		g_udpmbox_max = 0;
+		g_udpmbox_total = 0;
+
+		g_link_success = 0;
+		g_link_fail = 0;
+		g_link_total = 0;
+		g_driver_total = 0;
+
+		g_pbuf_success = 0;
+		g_pbuf_fail = 0;
+		g_pbuf_total_cnt = 0;
+		g_pbuf_driver_fail = 0;
+	}
 	return 0;
 }

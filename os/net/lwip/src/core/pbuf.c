@@ -179,8 +179,13 @@ static void pbuf_pool_is_empty(void)
  * @return the allocated pbuf. If multiple pbufs where allocated, this
  * is the first pbuf of a pbuf chain.
  */
+extern uint32_t g_pbuf_fail;
+extern uint32_t g_pbuf_success;
+extern uint32_t g_pbuf_total_cnt;
+
 struct pbuf *pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 {
+	g_pbuf_total_cnt++;
 	struct pbuf *p, *q, *r;
 	u16_t offset;
 	s32_t rem_len;				/* remaining length */
@@ -210,6 +215,7 @@ struct pbuf *pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 		break;
 	default:
 		LWIP_ASSERT("pbuf_alloc: bad pbuf layer", 0);
+		g_pbuf_fail++;
 		return NULL;
 	}
 
@@ -220,6 +226,7 @@ struct pbuf *pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 		LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_alloc: allocated pbuf %p\n", (void *)p));
 		if (p == NULL) {
 			PBUF_POOL_IS_EMPTY();
+			g_pbuf_fail++;
 			return NULL;
 		}
 		p->type = type;
@@ -254,6 +261,7 @@ struct pbuf *pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 				/* free chain so far allocated */
 				pbuf_free(p);
 				/* bail out unsuccessfully */
+				g_pbuf_fail++;
 				return NULL;
 			}
 			q->type = type;
@@ -284,6 +292,7 @@ struct pbuf *pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 
 		/* bug #50040: Check for integer overflow when calculating alloc_len */
 		if (alloc_len < LWIP_MEM_ALIGN_SIZE(length)) {
+		g_pbuf_fail++;
 			return NULL;
 		}
 
@@ -292,6 +301,7 @@ struct pbuf *pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 	}
 
 	if (p == NULL) {
+	g_pbuf_fail++;
 		return NULL;
 	}
 		/* Set up internal structure of the pbuf. */
@@ -310,6 +320,7 @@ struct pbuf *pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 		p = (struct pbuf *)memp_malloc(MEMP_PBUF);
 		if (p == NULL) {
 			LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("pbuf_alloc: Could not allocate MEMP_PBUF for PBUF_%s.\n", (type == PBUF_ROM) ? "ROM" : "REF"));
+			g_pbuf_fail++;
 			return NULL;
 		}
 		/* caller must set this field properly, afterwards */
@@ -320,6 +331,7 @@ struct pbuf *pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 		break;
 	default:
 		LWIP_ASSERT("pbuf_alloc: erroneous type", 0);
+		g_pbuf_fail++;
 		return NULL;
 	}
 	/* set reference count */
@@ -327,6 +339,7 @@ struct pbuf *pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
 	/* set flags */
 	p->flags = 0;
 	LWIP_DEBUGF(PBUF_DEBUG | LWIP_DBG_TRACE, ("pbuf_alloc(length=%" U16_F ") == %p\n", length, (void *)p));
+	g_pbuf_success++;
 	return p;
 }
 

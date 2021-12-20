@@ -177,6 +177,16 @@ static u8_t recv_raw(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_ad
  *
  * @see udp.h (struct udp_pcb.recv) for parameters
  */
+extern uint32_t g_tcpmbox_success ;
+extern uint32_t g_tcpmbox_fail ;
+extern uint32_t g_tcpmbox_max ;
+extern uint32_t g_tcpmbox_total ;
+
+extern uint32_t g_udpmbox_success ;
+extern uint32_t g_udpmbox_fail ;
+extern uint32_t g_udpmbox_max ;
+extern uint32_t g_udpmbox_total ;
+
 static void recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
 	//LWIP_DEBUGF(API_MSG_DEBUG,("ENtry recv_udp"));
@@ -226,8 +236,13 @@ static void recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_ad
 	}
 
 	len = p->tot_len;
+	if (len > g_udpmbox_max) {
+		g_udpmbox_max = len;
+	}
+	g_udpmbox_total += len;
 	if (sys_mbox_trypost(&conn->recvmbox, buf) != ERR_OK) {
 		netbuf_delete(buf);
+		g_udpmbox_fail++;
 		return;
 	} else {
 #if LWIP_SO_RCVBUF
@@ -235,6 +250,7 @@ static void recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_ad
 #endif							/* LWIP_SO_RCVBUF */
 		/* Register event with callback */
 		API_EVENT(conn, NETCONN_EVT_RCVPLUS, len);
+		g_udpmbox_success++;
 	}
 	//LWIP_DEBUGF(API_MSG_DEBUG,("Exit recv_udp"));
 
@@ -285,9 +301,14 @@ static err_t recv_tcp(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
 	} else {
 		len = 0;
 	}
-
+	//printf("[pkbuild] app %u %d %s:%d\n", g_tcpmbox_total, len,  __FUNCTION__, __LINE__);
+	if (len > g_tcpmbox_max) {
+		g_tcpmbox_max = len;
+	}
+	g_tcpmbox_total += len;
 	if (sys_mbox_trypost(&conn->recvmbox, p) != ERR_OK) {
 		/* don't deallocate p: it is presented to us later again from tcp_fasttmr! */
+		g_tcpmbox_fail++;
 		return ERR_MEM;
 	} else {
 #if LWIP_SO_RCVBUF
@@ -295,6 +316,7 @@ static err_t recv_tcp(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
 #endif							/* LWIP_SO_RCVBUF */
 		/* Register event with callback */
 		API_EVENT(conn, NETCONN_EVT_RCVPLUS, len);
+		g_tcpmbox_success++;
 	}
 
 	return ERR_OK;

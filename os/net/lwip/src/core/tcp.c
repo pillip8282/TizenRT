@@ -796,7 +796,9 @@ void tcp_recved(struct tcp_pcb *pcb, u16_t len)
 		tcp_output(pcb);
 	}
 
-	LWIP_DEBUGF(TCP_DEBUG, ("tcp_recved: received %" U16_F " bytes, wnd %" TCPWNDSIZE_F " (%" TCPWNDSIZE_F ").\n", len, pcb->rcv_wnd, (u16_t)(TCP_WND_MAX(pcb) - pcb->rcv_wnd)));
+	LWIP_DEBUGF(TCP_DEBUG, ("tcp_recved: received %" U16_F " bytes, wnd %" TCPWNDSIZE_F " (%" TCPWNDSIZE_F ").\n",
+							len, pcb->rcv_wnd,
+							(TCP_WND_MAX(pcb) - pcb->rcv_wnd)));
 }
 
 /**
@@ -1965,7 +1967,7 @@ void tcp_debug_print(struct tcp_hdr *tcphdr)
  */
 void tcp_debug_print_state(enum tcp_state s)
 {
-	LWIP_DEBUGF(TCP_DEBUG, ("State: %s\n", tcp_state_str[s]));
+	// pkbuild LWIP_DEBUGF(TCP_DEBUG, ("State: %s\n", tcp_state_str[s]));
 }
 
 /**
