@@ -1381,7 +1381,6 @@ static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 	LWIP_ASSERT("fds != NULL", fds != NULL);
 
 	SYS_ARCH_DECL_PROTECT(lev);
-	fds->scb = NULL;
 	nready = lwip_poll_scan(fd, sock, fds);
 
 	/* Check if any requested events are already in effect */
@@ -1414,7 +1413,7 @@ static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 		select_cb_list->prev = select_cb;
 	}
 
-	fds->scb = (void *)select_cb;
+	fds->priv = (void *)select_cb;
 	select_cb_list = select_cb;
 
 	/* Increasing this counter tells event_callback that the list has changed. */
@@ -1446,7 +1445,7 @@ static int lwip_poll_teardown(int fd, struct lwip_sock *sock, struct pollfd *fds
 	struct lwip_select_cb *select_cb = NULL;
 	SYS_ARCH_DECL_PROTECT(lev);
 
-	select_cb = (struct lwip_select_cb *)fds->scb;
+	select_cb = (struct lwip_select_cb *)fds->priv;
 
 	SYS_ARCH_PROTECT(lev);
 	if (sock->select_waiting > 0) {
