@@ -305,6 +305,12 @@ static void lwip_socket_unregister_membership(int s, const ip4_addr_t *if_addr, 
 static void lwip_socket_drop_registered_memberships(struct lwip_sock *sock);
 #endif							/* LWIP_IGMP */
 
+extern uint32_t g_api_setup_cnt;
+extern uint32_t g_api_event_cnt;
+extern uint32_t g_api_teardown_cnt;
+extern uint32_t g_api_search_cnt ;
+extern uint32_t g_api_search_total ;
+
 /** The global list of tasks waiting for select */
 static struct lwip_select_cb *select_cb_list;
 /** This counter is increased from lwip_select when the list is chagned
@@ -1654,6 +1660,7 @@ static int lwip_poll_scan(int fd, struct lwip_sock *sock, struct pollfd *fds)
 
 static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 {
+	g_api_setup_cnt++;
 	int nready = 0;
 	int scb_size = 0;
 	struct lwip_select_cb *select_cb = NULL;
@@ -1730,6 +1737,7 @@ static int lwip_poll_setup(int fd, struct lwip_sock *sock, struct pollfd *fds)
 
 static int lwip_poll_teardown(int fd, struct lwip_sock *sock, struct pollfd *fds)
 {
+	g_api_teardown_cnt++;
 	struct lwip_select_cb *select_cb = NULL;
 	SYS_ARCH_DECL_PROTECT(lev);
 
@@ -1828,6 +1836,7 @@ int lwip_poll(int fd, struct pollfd *fds, bool setup)
  */
 static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len)
 {
+	g_api_event_cnt++;
 	int s;
 	struct lwip_sock *sock;
 	struct lwip_select_cb *scb;
@@ -1898,8 +1907,10 @@ static void event_callback(struct netconn *conn, enum netconn_evt evt, u16_t len
 	   of waiting select calls + 1. This list is expected to be small. */
 
 	/* At this point, SYS_ARCH is still protected! */
+	g_api_search_cnt++;
 again:
 	for (scb = select_cb_list; scb != NULL; scb = scb->next) {
+		g_api_search_total++;
 		/* remember the state of select_cb_list to detect changes */
 		last_select_cb_ctr = select_cb_ctr;
 		if (scb->sem_signalled == 0) {

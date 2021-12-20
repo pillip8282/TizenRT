@@ -60,6 +60,12 @@
 /****************************************************************************
  * hello_main
  ****************************************************************************/
+uint32_t g_api_setup_cnt = 0;
+uint32_t g_api_event_cnt = 0;
+uint32_t g_api_teardown_cnt = 0;
+uint32_t g_api_search_cnt = 0;
+uint32_t g_api_search_total = 0;
+
 uint32_t g_app_recv_cnt = 0;
 uint32_t g_app_recv_total = 0;
 uint32_t g_app_recv_max = 0;
@@ -91,6 +97,11 @@ int hello_main(int argc, char *argv[])
 #endif
 {
 	printf("Hello, World!!\n");
+	printf("[API] %u %u %u %u %u avg %u\n",
+				 g_api_setup_cnt, g_api_teardown_cnt, g_api_event_cnt,
+				 g_api_search_cnt, g_api_search_total,
+				 ((g_api_search_cnt == 0) ? 0 : g_api_search_total / g_api_search_cnt));
+	
 	printf("[APP] %u %u max %u avg %u\n",
 		   g_app_recv_cnt, g_app_recv_total, g_app_recv_max,
 		   ((g_app_recv_cnt == 0) ? 0 : g_app_recv_total / g_app_recv_cnt));
@@ -115,6 +126,12 @@ int hello_main(int argc, char *argv[])
 		   g_pbuf_driver_fail);
 
 	if (argc == 2) {
+		g_api_event_cnt = 0;
+		g_api_setup_cnt = 0;
+		g_api_teardown_cnt = 0;
+		g_api_search_cnt = 0;
+		g_api_search_total = 0;
+		
 		g_app_recv_cnt = 0;
 		g_app_recv_total = 0;
 		g_app_recv_max = 0;
