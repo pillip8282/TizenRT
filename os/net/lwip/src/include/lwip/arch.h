@@ -72,7 +72,7 @@
  */
 
 #ifndef LWIP_PLATFORM_DIAG
-#define LWIP_PLATFORM_DIAG(msg) do { printf msg; } while (0)
+#define LWIP_PLATFORM_DIAG(msg) do { lldbg_noarg msg; } while (0)
 #endif
 
 #ifndef LWIP_STATS_DIAG

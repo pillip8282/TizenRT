@@ -664,6 +664,7 @@ void lwip_netconn_do_newconn(void *m)
  * @return a newly allocated struct netconn or
  *         NULL on memory error
  */
+//sys_mbox_t *g_debug_mbox = NULL;
 struct netconn *netconn_alloc(enum netconn_type t, netconn_callback callback)
 {
 	struct netconn *conn;
@@ -706,6 +707,7 @@ struct netconn *netconn_alloc(enum netconn_type t, netconn_callback callback)
 	if (sys_mbox_new(&conn->recvmbox, size) != ERR_OK) {
 		goto free_and_return;
 	}
+	//g_debug_mbox = &conn->recvmbox;
 #if !LWIP_NETCONN_SEM_PER_THREAD
 	if (sys_sem_new(&conn->op_completed, 0) != ERR_OK) {
 		sys_mbox_free(&conn->recvmbox);

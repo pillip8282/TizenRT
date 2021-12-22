@@ -118,6 +118,7 @@ void sys_mbox_free(sys_mbox_t *mbox)
 
 	return;
 }
+extern sys_mbox_t *g_debug_mbox;
 
 /*---------------------------------------------------------------------------*
  * Routine:  sys_mbox_post (Blocking Call)
@@ -133,25 +134,20 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 	u8_t first_msg = 0;
 	u32_t tmp = 0;
 	u32_t status = OK;
-	status = sys_arch_sem_wait(&(mbox->mutex), 0);
-	if (status == SYS_ARCH_CANCELED) {
-		return;
-	}
-	LWIP_DEBUGF(SYS_DEBUG, ("mbox %p msg %p\n", (void *)mbox, (void *)msg));
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d post: mbox %p (%u/%u)\n", getpid(), (void *)mbox, mbox->front, mbox->rear);
+	sys_arch_sem_wait(&(mbox->mutex), 0);
 	/* Wait while the queue is full */
 	tmp = (mbox->rear + 1) % mbox->queue_size;
 	if (tmp == mbox->front) {
 		LWIP_DEBUGF(SYS_DEBUG, ("Queue Full, Wait until gets free\n"));
+		if (mbox != g_debug_mbox) lldbg_noarg("T%d queue full %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 	}
 	while (tmp == mbox->front) {
 		mbox->wait_send++;
 		sys_sem_signal(&(mbox->mutex));
 		sys_arch_sem_wait(&(mbox->mail), 0);
-		status = sys_arch_sem_wait(&(mbox->mutex), 0);
+		sys_arch_sem_wait(&(mbox->mutex), 0);
 		mbox->wait_send--;
-		if (status == SYS_ARCH_CANCELED) {
-			return;
-		}
 	}
 
 	if (mbox->rear == mbox->front) {
@@ -162,15 +158,16 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 
 	mbox->rear = tmp;
 	mbox->msgs[mbox->rear] = msg;
-	LWIP_DEBUGF(SYS_DEBUG, ("Post SUCCESS\n"));
+	LWIP_DEBUGF(SYS_DEBUG, ("Post SUCCESS %p\n", __builtin_return_address(0)));
 
 	/* If msg was posted to an empty queue, Release semaphore for
 	   some fetch api blocked on this sem due to Empty queue. */
 	if (first_msg && mbox->wait_fetch) {
 		sys_sem_signal(&(mbox->mail));
+		if (mbox != g_debug_mbox) lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 	}
-
 	sys_sem_signal(&(mbox->mutex));
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 	return;
 }
 
@@ -192,13 +189,15 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 	err_t err = ERR_OK;
 	u8_t first_msg = 0;
 	u32_t tmp = 0;
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d trypost: mbox %p (%u/%u)\n", getpid(), (void *)mbox, mbox->front, mbox->rear);
 	sys_arch_sem_wait(&(mbox->mutex), 0);
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 
-	LWIP_DEBUGF(SYS_DEBUG, ("mbox %p msg %p\n", (void *)mbox, (void *)msg));
 	/* Check if the queue is full */
 	tmp = (mbox->rear + 1) % mbox->queue_size;
 	if (tmp == mbox->front) {
 		LWIP_DEBUGF(SYS_DEBUG, ("Queue Full, returning error\n"));
+		if (mbox != g_debug_mbox) lldbg_noarg("T%d queue full %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 		err = ERR_MEM;
 		goto errout_with_mutex;
 	}
@@ -211,17 +210,19 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 
 	mbox->rear = tmp;
 	mbox->msgs[mbox->rear] = msg;
-	LWIP_DEBUGF(SYS_DEBUG, ("Post SUCCESS\n"));
+	LWIP_DEBUGF(SYS_DEBUG, ("Post SUCCESS %p \n", __builtin_return_address(0)));
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d post success %p %s:%d\n", getpid(), mbox, __FUNCTION__, __LINE__);
 
 	/* If msg was posted to an empty queue, Release semaphore for
 	   some fetch api blocked on this sem due to Empty queue. */
 	if (first_msg && mbox->wait_fetch) {
 		sys_sem_signal(&(mbox->mail));
+		if (mbox != g_debug_mbox) lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 	}
 
 errout_with_mutex:
 	sys_sem_signal(&(mbox->mutex));
-
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 	return err;
 }
 
@@ -258,12 +259,9 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
 	/* The mutex lock is quick so we don't bother with the timeout
 	   stuff here. */
-
-	status = sys_arch_sem_wait(&(mbox->mutex), 0);
-	if (status == SYS_ARCH_CANCELED) {
-		return SYS_ARCH_CANCELED;
-	}
-
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d %s %p (%u/%u) %u\n", getpid(), __FUNCTION__, mbox, mbox->front, mbox->rear, timeout);
+	sys_arch_sem_wait(&(mbox->mutex), 0);
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 	/* wait while the queue is empty */
 	while (mbox->front == mbox->rear) {
 		mbox->wait_fetch++;
@@ -272,16 +270,15 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 		/* We block while waiting for a mail to arrive in the mailbox. We
 		   must be prepared to timeout. */
 		if (timeout != 0) {
-
 			if (timeout < MSEC_PER_TICK)
 				timeout = MSEC_PER_TICK;
 
 			time = sys_arch_sem_wait(&(mbox->mail), timeout);
-
 			if (time == SYS_ARCH_TIMEOUT) {
 				sys_arch_sem_wait(&(mbox->mutex), 0);
 				mbox->wait_fetch--;
 				sys_sem_signal(&(mbox->mutex));
+				if (mbox != g_debug_mbox) lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 				return SYS_ARCH_TIMEOUT;
 			}
 		} else {
@@ -290,17 +287,16 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
 		status = sys_arch_sem_wait(&(mbox->mutex), 0);
 		mbox->wait_fetch--;
-		if (status == SYS_ARCH_CANCELED) {
-			return SYS_ARCH_CANCELED;
-		}
 	}
 
 	mbox->front = (mbox->front + 1) % mbox->queue_size;
 	if (msg != NULL) {
 		*msg = mbox->msgs[mbox->front];
 		LWIP_DEBUGF(SYS_DEBUG, (" mbox %p msg %p\n", (void *)mbox, *msg));
+		if (mbox != g_debug_mbox) lldbg_noarg("T%d mbox %p get msg %s:%d\n", getpid(), mbox,  __FUNCTION__, __LINE__);
 	} else {
 		LWIP_DEBUGF(SYS_DEBUG, (" mbox %p, null msg\n", (void *)mbox));
+		if (mbox != g_debug_mbox) lldbg_noarg("T%d mbox %p get null msg %s:%d\n", getpid(), mbox,  __FUNCTION__, __LINE__);
 	}
 
 	/* We just fetched a msg, Release semaphore for
@@ -310,7 +306,7 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 	}
 
 	sys_sem_signal(&(mbox->mutex));
-
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 	return time;
 }
 
@@ -333,11 +329,16 @@ u32_t sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
 	u32_t err = ERR_OK;
 	/* The mutex lock is quick so we don't bother with the timeout
 	   stuff here. */
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d tryfetch (%u/%u)\n", getpid(), mbox->front, mbox->rear);
+	
 	sys_arch_sem_wait(&(mbox->mutex), 0);
+
+	if (mbox != g_debug_mbox)lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 
 	/* check if the queue is empty */
 	if (mbox->front == mbox->rear) {
 		LWIP_DEBUGF(SYS_DEBUG, ("SYS_MBOX_EMPTY , returning\n"));
+		if (mbox != g_debug_mbox)lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 		err = SYS_MBOX_EMPTY;
 		goto errout_with_mutex;
 	}
@@ -345,19 +346,27 @@ u32_t sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
 	mbox->front = (mbox->front + 1) % mbox->queue_size;
 	if (msg != NULL) {
 		LWIP_DEBUGF(SYS_DEBUG, ("mbox %p msg %p\n", (void *)mbox, *msg));
+		if (mbox != g_debug_mbox)lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 		*msg = mbox->msgs[mbox->front];
 	} else {
 		LWIP_DEBUGF(SYS_DEBUG, ("mbox %p, null msg\n", (void *)mbox));
+		if (mbox != g_debug_mbox)lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 	}
 
 	/* We just fetched a msg, Release semaphore for
 	   some post api blocked on this sem due to queue full. */
 	if (mbox->wait_send) {
+		// lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
+		if (mbox != g_debug_mbox) lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 		sys_sem_signal(&(mbox->mail));
 	}
 
 errout_with_mutex:
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
+	
 	sys_sem_signal(&(mbox->mutex));
+	
+	if (mbox != g_debug_mbox) lldbg_noarg("T%d %s:%d\n", getpid(), __FUNCTION__, __LINE__);
 	return err;
 }
 
@@ -376,10 +385,10 @@ int sys_mbox_valid(sys_mbox_t *mbox)
 {
 	LWIP_DEBUGF(SYS_DEBUG, ("mbox->id = %d ", mbox->id));
 	if (mbox->is_valid == 1) {
-		LWIP_DEBUGF(SYS_DEBUG, ("Mbox (%d) Valid", mbox->id));
+		LWIP_DEBUGF(SYS_DEBUG, ("Mbox (%d) Valid\n", mbox->id));
 		return 1;
 	} else {
-		LWIP_DEBUGF(SYS_DEBUG, ("Mbox (%d) Invalid", mbox->id));
+		LWIP_DEBUGF(SYS_DEBUG, ("Mbox (%d) Invalid\n", mbox->id));
 		return 0;
 	}
 }
@@ -453,8 +462,7 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
  *      sys_sem_t sem           -- Semaphore to wait on
  *      u32_t timeout           -- Number of milliseconds until timeout
  * Outputs:
- *      u32_t                   -- SYS_ARCH_CANCELED if the operation canceled,
- *				   SYS_ARCH_TIMEOUT if timeout, else time elapsed.
+ *      u32_t                   -- SYS_ARCH_TIMEOUT if timeout, else time elapsed.
  *---------------------------------------------------------------------------*/
 u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 {
@@ -468,13 +476,10 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 			 * awakened by the receipt of a signal.
 			 * Restart If signal is EINTR else crash on Assert as we can't receive ETIMEDOUT
 			 */
-			status = get_errno();
-			if (status == ECANCELED) {
-				return SYS_ARCH_CANCELED;
-			}
 			LWIP_ASSERT("status == EINTR", status == EINTR);
+			continue;
 		}
-		status = OK;
+		return OK;
 	} else {
 		remaining_time = timeout;
 		while ((status = sem_tickwait(sem, clock_systimer(), MSEC2TICK(remaining_time))) != OK) {
@@ -487,8 +492,6 @@ u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 				return SYS_ARCH_TIMEOUT;
 			} else if (err_no == ENOMEM) {
 				LWIP_ASSERT("status == ENOMEM", 0);
-			} else if (err_no == ECANCELED) {
-				return SYS_ARCH_CANCELED;
 			} else {
 				/* calculate remaining timeout */
 				remaining_time -= TICK2MSEC(clock_systimer() - start);
@@ -515,7 +518,7 @@ void sys_sem_signal(sys_sem_t *sem)
 	int status = -1;
 	status = sem_post(sem);
 	if (status) {
-		LWIP_DEBUGF(SYS_DEBUG, ("sem_post error"));
+		LWIP_DEBUGF(SYS_DEBUG, ("sem_post error %s\n", strerror(errno)));
 	}
 	return;
 }

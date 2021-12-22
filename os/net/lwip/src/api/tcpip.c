@@ -105,6 +105,8 @@ sys_mutex_t lock_tcpip_core;
  *
  * @param arg unused argument
  */
+sys_mbox_t *g_debug_mbox = NULL;
+
 static void tcpip_thread(void *arg)
 {
 	struct tcpip_msg *msg = NULL;
@@ -113,7 +115,7 @@ static void tcpip_thread(void *arg)
 	if (tcpip_init_done != NULL) {
 		tcpip_init_done(tcpip_init_done_arg);
 	}
-
+	//g_debug_mbox = &mbox;
 	LOCK_TCPIP_CORE();
 	while (1) {					/* MAIN Loop */
 		UNLOCK_TCPIP_CORE();
