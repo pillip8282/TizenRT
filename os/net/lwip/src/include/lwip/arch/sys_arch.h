@@ -29,7 +29,7 @@
 #define SYS_MBOX_NULL ((sys_mbox_t *)NULL)
 #define SYS_SEM_NULL  ((sys_sem_t *)NULL)
 #define SYS_DEFAULT_THREAD_STACK_DEPTH  PTHREAD_STACK_MIN
-#define SYS_MBOX_MAXSIZE 128
+#define SYS_MBOX_MAXSIZE 256
 
 // === PROTECTION ===
 typedef int sys_prot_t;

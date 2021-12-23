@@ -299,7 +299,9 @@ struct mem {
  * how that space is calculated). */
 #ifndef LWIP_RAM_HEAP_POINTER
 /** the heap. we need one struct mem at the end and some room for alignment */
-LWIP_DECLARE_MEMORY_ALIGNED(ram_heap, MEM_SIZE_ALIGNED + (2U * SIZEOF_STRUCT_MEM));
+//LWIP_DECLARE_MEMORY_ALIGNED(ram_heap, MEM_SIZE_ALIGNED + (2U * SIZEOF_STRUCT_MEM));
+#define ATTR_ZIDATA_IN_TCM    __attribute__ ((__section__(".psram.bss")))
+ATTR_ZIDATA_IN_TCM u8_t ram_heap[LWIP_MEM_ALIGN_BUFFER(MEM_SIZE_ALIGNED + (2U * SIZEOF_STRUCT_MEM))] ;
 #define LWIP_RAM_HEAP_POINTER ram_heap
 #endif							/* LWIP_RAM_HEAP_POINTER */
 
