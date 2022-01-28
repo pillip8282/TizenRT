@@ -12,13 +12,21 @@ config NET_LWIP_ERROR
 	---help---
 		Enable ERROR options for each layers
 
-config NET_LWIP_DEBUG
-	bool "Enable Debug Features"
-	default n
+choice
+	prompt "lwIP Debug Log"
+	default NET_LWIP_DEBUG
+
+config NET_LWIP_BUILDTIME_DEBUG
+	bool "Build time logging"
 	---help---
 		Debug options for each layers
 
-if NET_LWIP_DEBUG
+config NET_LWIP_RUNTIME_DEBUG
+	bool "Run-time lwIP debug logging"
+  depends on NET_LOGGER
+endchoice
+
+if NET_LWIP_BUILDTIME_DEBUG
 
 config NET_LWIP_DEBUG_LEVEL
 	int "LWIP debug level"

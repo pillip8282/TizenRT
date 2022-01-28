@@ -116,6 +116,7 @@
 		LWIP_PLATFORM_ERROR(message); handler; } } while (0)
 #endif							/* LWIP_ERROR */
 
+#ifdef CONFIG_NET_LWIP_BUILDTIME_DEBUG
 #ifdef LWIP_DEBUG
 #ifndef LWIP_PLATFORM_DIAG
 #error "If you want to use LWIP_DEBUG, LWIP_PLATFORM_DIAG(message) needs to be defined in your arch/cc.h"
@@ -135,5 +136,11 @@
 #else							/* LWIP_DEBUG */
 #define LWIP_DEBUGF(debug, message)
 #endif							/* LWIP_DEBUG */
+#else /*  CONFIG_NET_LWIP_BUILDTIME_DEBUG */
+#include <tinyara/net/netlog.h>
+#define LWIP_STRIP_PARENS( ... )   __VA_ARGS__
+#define LWIP_DEBUGF(debug, message) \
+	netlogger_print(NL_MOD_LWIP, debug, __FUNCTION__, __FILE__, __LINE__, LWIP_STRIP_PARENS message)
+#endif
 
 #endif							/* LWIP_HDR_DEBUG_H */
