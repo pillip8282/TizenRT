@@ -229,6 +229,26 @@ static void *_generate_random_event(void *arg)
 	return NULL;
 }
 
+// create multi thread to generate events	
+void test() {
+	// generate thread named t1 with function _generate_pseudo_event
+	
+	// compare character buffer s1 and s2
+	// if s1 is equal to s2, return 0
+	// if s1 is greater than s2, return positive value
+	// if s1 is less than s2, return negative value
+	char 
+	if (strcmp(s1, s2) == 0) {
+		printf("s1 is equal to s2\n");
+	} else if (strcmp(s1, s2) > 0) {
+		printf("s1 is greater than s2\n");
+	} else {
+		printf("s1 is less than s2\n");
+	}
+	
+}
+
+	
 static void *_generate_event(void *arg)
 {
 	struct ls_msg *msg = (struct ls_msg *)arg;
